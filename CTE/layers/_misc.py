@@ -3,8 +3,8 @@ import numpy as np
 import torch.nn as nn
 import torch
 import pandas as pd
-from Sandboxes.Farjon.CTE.utils.annealing_mechanism_functions import init_ambiguity_thresholds
-from Sandboxes.Farjon.CTE.utils.annealing_mechanism_functions import init_anneal_state, init_anneal_state_tabular
+from CTE.utils.annealing_mechanism_functions import init_ambiguity_thresholds
+from CTE.utils.annealing_mechanism_functions import init_anneal_state, init_anneal_state_tabular
 # from pytorch_memlab import profile
 
 # pytorch uses NxCxHxW dimension order!!

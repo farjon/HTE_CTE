@@ -1,9 +1,9 @@
 import sys
 import numpy as np
-from Sandboxes.Farjon.CTE.layers._misc import FernBitWord_tabular, FernSparseTable_tabular
+from CTE.layers._misc import FernBitWord_tabular, FernSparseTable_tabular
 import torch.nn as nn
 import torch
-from Sandboxes.Farjon.CTE.utils.annealing_mechanism_functions import update_ambiguity_thresholds_tabular, update_Rho_tempature_tabular
+from CTE.utils.annealing_mechanism_functions import update_ambiguity_thresholds_tabular, update_Rho_tempature_tabular
 
 
 class HTE(nn.Module):

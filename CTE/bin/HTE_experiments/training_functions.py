@@ -19,7 +19,7 @@ def train_loop(args, train_loader, validation_loader, model, optimizer, criterio
     loss_for_epoch = []
     index = count()
     end = time.time()
-    number_of_batchs = train_loader.dataset.examples.shape[0] / 200
+    number_of_batchs = train_loader.dataset.examples.shape[0] / args.batch_size
 
     for epoch in range(args.num_of_epochs):
         running_loss_graph = 0.0
