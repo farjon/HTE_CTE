@@ -847,11 +847,11 @@ class FernSparseTable_tabular(nn.Module):
     def create_truth_table(self, N):
         # Create ‘truth table’ binary mask tensors
         tensor_bit_pattern = []
-        const_2_tensor = torch.tensor(2, dtype=torch.int32).cuda()
+        const_2_tensor = torch.tensor(2, dtype=torch.int32).to(self.device)
         for j in range(self.LP):
             replicate = const_2_tensor.pow(j)
 
-            zeros_and_ones = torch.cat([torch.zeros(replicate, dtype=torch.int32).cuda(), torch.ones(replicate, dtype=torch.int32).cuda()])
+            zeros_and_ones = torch.cat([torch.zeros(replicate, dtype=torch.int32).to(self.device), torch.ones(replicate, dtype=torch.int32).to(self.device)])
             bit_pattern = zeros_and_ones.repeat(int(self.num_of_active_words / (2 * replicate)))
             bit_pattern_repeat = bit_pattern.repeat([N, 1])
             tensor_bit_pattern.append(bit_pattern_repeat.bool().to(self.device))
