@@ -181,7 +181,7 @@ def init_anneal_state_tabular(anneal_state_params = None):
         anneal_state_params['use_sign_condition'] = True
     # calculated for batch_size = 200 and Rho starting at 0.7 for last epoch to be at 0.05 (after 70 epochs)
     if 'cooling_rate' not in anneal_state_params:
-        anneal_state_params['cooling_rate'] = 0.99998
+        anneal_state_params['cooling_rate'] = 0.998
     if 'tempature' not in anneal_state_params:
         anneal_state_params['tempature'] = 1
     if 'tempature_heat_rate' not in anneal_state_params:

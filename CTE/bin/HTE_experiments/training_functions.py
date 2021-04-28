@@ -23,6 +23,7 @@ def train_loop(args, train_loader, validation_loader, model, optimizer, criterio
 
     for epoch in range(args.num_of_epochs):
         running_loss_graph = 0.0
+        batch_index = 0
         for inputs, labels in train_loader:
             # get the inputs; data is a list of [inputs, labels]
             inputs = inputs.to(device)
@@ -36,11 +37,12 @@ def train_loop(args, train_loader, validation_loader, model, optimizer, criterio
             loss.backward()
             optimizer.step()
             model.on_batch_ends(device)
-            print('batch %d loss: %.3f' %
-                  (epoch + 1, loss))
-            print('batch time is %s' % (time.time() - end))
+            print('batch %d loss: %.3f,  time: %.3f' %
+                  (batch_index + 1, loss, time.time() - end))
             end = time.time()
-            optimizer.defaults['lr'] = optimizer.defaults['lr'] * args.LR_decay
+            batch_index+=1
+        optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * args.LR_decay
+        optimizer.param_groups[1]['lr'] = optimizer.param_groups[1]['lr'] * args.LR_decay
 
         correct = 0
         total = 0
