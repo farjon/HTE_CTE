@@ -12,11 +12,23 @@ def main(args=None):
         test_path = os.path.join(args.datapath, 'test')
         val_path = os.path.join(args.datapath, 'val')
     else:
-        # read 'YEAST' dataset and split to train-val-test
+        # read 'ADULT' dataset and split to train-val-test
         adult_data = pd.read_csv(os.path.join(args.datadir, 'AdultLabelEncoding.csv'))
-        # adult_data.drop(adult_data[0])
-        classes = adult_data['income']
-        features = adult_data.drop(['income'], axis='columns')
+        # dropping non category columns
+        adult_data = adult_data.drop([
+            'workclass',
+            'education',
+            'marital.status',
+            'occupation',
+            'relationship',
+            'race',
+            'sex',
+            'native.country',
+            'income'
+        ], axis='columns')
+
+        classes = adult_data['income.cat']
+        features = adult_data.drop(['income.cat'], axis='columns')
         x_train, x_test, y_train, y_test = train_test_split(features.to_numpy(), classes, test_size=0.2, shuffle=True)
         x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=0.2, shuffle=True)
 
@@ -41,7 +53,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="HTE model")
     args = parser.parse_args()
 
-    args.datadir = os.path.join('D:\\Datasets\\ADULT')
+    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'ADULT')
     args.datapath = os.path.join(args.datadir, 'split_data')
     args.train_rate = 0.8
     args.val_rate = 0.2

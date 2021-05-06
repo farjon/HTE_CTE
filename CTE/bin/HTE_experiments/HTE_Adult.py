@@ -5,11 +5,11 @@ from GetEnvVar import GetEnvVar
 from CTE.models.HTE_model import HTE
 import torch
 import torch.nn as nn
-from CTE.utils.datasets import Letter_dataset
+from CTE.utils.datasets import Adult_dataset
 from torch import optim
 from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
 from CTE.bin.HTE_experiments.training_functions import train_loop
-from CTE.utils.datasets.create_letters_dataset import main as create_letters_dataset
+from CTE.utils.datasets.create_adult_dataset import main as create_adult_dataset
 
 def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -30,8 +30,8 @@ def main():
     args.draw_line = True
 
     # path to save models
-    experiment_name = 'HTE-Letter-Recognition'
-    experiment_number = '10'
+    experiment_name = 'HTE-Adult_not_1_hot'
+    experiment_number = '0'
     args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
@@ -43,40 +43,40 @@ def main():
                                         experiment_number, 'hyper_parameters_values.csv')
 
     # optimization Parameters
-    args.word_calc_learning_rate = 0.001
+    args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.1
 
     args.LR_decay = 0.9995
     args.num_of_epochs = 50
-    args.batch_size = 200
+    args.batch_size = 500
     args.optimizer = 'ADAM'
     args.loss = 'categorical_crossentropy'
 
-    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'LETTER')
+    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'ADULT')
 
     args.datapath = os.path.join(args.datadir, 'split_data')
-    train_path, val_path, test_path = create_letters_dataset(args)
+    train_path, val_path, test_path = create_adult_dataset(args)
 
     params = {'batch_size': args.batch_size,
               'shuffle': True,
               'num_workers': 0}
 
     # create train,val,test data_loader
-    training_set = Letter_dataset.Letters(train_path)
+    training_set = Adult_dataset.Adult_Not_1_hot(train_path)
     train_loader = torch.utils.data.DataLoader(training_set, **params)
 
     train_mean = train_loader.dataset.mean
     train_std = train_loader.dataset.std
 
-    validation_set = Letter_dataset.Letters(val_path, train_mean, train_std)
+    validation_set = Adult_dataset.Adult_Not_1_hot(val_path, train_mean, train_std)
     validation_loader = torch.utils.data.DataLoader(validation_set, **params)
 
-    testing_set = Letter_dataset.Letters(test_path, train_mean, train_std)
+    testing_set = Adult_dataset.Adult_Not_1_hot(test_path, train_mean, train_std)
     test_loader = torch.utils.data.DataLoader(testing_set, **params)
 
     # Letter recognition dataset has 16 features
-    D_in = 16
-    D_out = 26
+    D_in = 12
+    D_out = 2
     args.input_size = [args.batch_size, D_in]
     # Decide on the ferns parameters and sparse table parameters
     # Fern parameters should include:
@@ -86,7 +86,7 @@ def main():
     # Sparse Table should include:
     #   D_out - number of features for next layer
     args.Fern_layer = [
-        {'K': 7, 'M': 20, 'num_of_features': D_in}
+        {'K': 7, 'M': 50, 'num_of_features': D_in}
     ]
     args.ST_layer = [
         {'Num_of_active_words': 2**args.Fern_layer[0]['K'], 'D_out': D_out}
@@ -167,7 +167,14 @@ def main():
         100 * correct / total))
 
     print('Finished Training')
-    print_end_experiment_report(args, model, optimizer, (100 * correct / total), total)
+    path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
+                                           experiment_number, 'best_parameters_final_values.csv')
+    path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
+                                                 experiment_number, 'best_hyper_parameters_values.csv')
+    print_end_experiment_report(args, test_model, optimizer,
+                                (100 * correct / total), total,
+                                path_to_parameters_save,
+                                path_to_hyper_parameters_save)
 
 if __name__ == '__main__':
     main()
