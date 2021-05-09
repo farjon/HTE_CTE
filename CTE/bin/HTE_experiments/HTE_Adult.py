@@ -137,14 +137,37 @@ def main():
 
     final_model = train_loop(args, train_loader, validation_loader, model, optimizer, criterion, device, saving_path, save_model_anneal_params)
 
-    #save model and ambiguity_thresholds
-    torch.save(final_model.state_dict(), os.path.join(saving_path, 'final_model_parameters.pth'))
-
     final_paths = []
     for i in range(0,args.number_of_layers*2,2):
         final_paths.append(os.path.join(saving_path, 'final_ambiguity_thresholds_layer_'+str(i)+'.p'))
         final_paths.append(os.path.join(saving_path, 'final_anneal_params_'+str(i+1)+'.p'))
     save_model_anneal_params(final_model, final_paths)
+
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for inputs_test, labels_test in test_loader:
+            inputs_test = inputs_test.to(device)
+            labels_test = labels_test.to(device)
+            outputs_test = final_model(inputs_test)
+            _, predicted = torch.max(outputs_test.data, 1)
+            total += labels_test.size(0)
+            correct += (predicted == labels_test).sum().item()
+
+            # print statistics
+        print('Accuracy of the network on the %d test examples: %.2f %%' % (
+        test_loader.dataset.examples.shape[0],
+        100 * correct / total))
+
+    path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
+                                        experiment_number, 'final_parameters_final_values.csv')
+    path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
+                                        experiment_number, 'final_hyper_parameters_values.csv')
+    print_end_experiment_report(args, final_model, optimizer,
+                                (100 * correct / total), total,
+                                path_to_parameters_save,
+                                path_to_hyper_parameters_save)
+
 
     test_model = HTE(args, args.input_size, device)
     test_model.load_state_dict(torch.load(os.path.join(saving_path, 'best_model_parameters.pth')), strict=False)
@@ -168,9 +191,9 @@ def main():
 
     print('Finished Training')
     path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                           experiment_number, 'best_parameters_final_values.csv')
+                                        experiment_number, 'best_parameters_final_values.csv')
     path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                                 experiment_number, 'best_hyper_parameters_values.csv')
+                                        experiment_number, 'best_hyper_parameters_values.csv')
     print_end_experiment_report(args, test_model, optimizer,
                                 (100 * correct / total), total,
                                 path_to_parameters_save,
