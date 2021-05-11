@@ -5,15 +5,14 @@ from GetEnvVar import GetEnvVar
 from CTE.models.HTE_model import HTE
 import torch
 import torch.nn as nn
-from CTE.utils.datasets import Letter_dataset
+from CTE.utils.datasets import Adult_dataset
 from torch import optim
 from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
 from CTE.bin.HTE_experiments.training_functions import train_loop
-from CTE.utils.datasets.create_letters_dataset import main as create_letters_dataset
+from CTE.utils.datasets.create_adult_dataset import main as create_adult_dataset
 
 def main():
-    device = torch.device('cpu')
-    # device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
         torch.cuda.set_device(0)
         torch.backends.cudnn.deterministic = True
@@ -31,51 +30,53 @@ def main():
     args.draw_line = True
 
     # path to save models
-    experiment_name = 'HTE-Letter-Recognition'
-    experiment_number = '3'
+    experiment_name = 'HTE-Adult_not_1_hot'
+    experiment_number = '0'
     args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
     args.save_graph_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
                                         experiment_number)
+    args.path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
+                                        experiment_number, 'parameters_final_values.csv')
+    args.path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
+                                        experiment_number, 'hyper_parameters_values.csv')
 
     # optimization Parameters
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.1
 
-    args.LR_decay = 0.999
-    args.num_of_epochs = 80
-    args.batch_size = 200
+    args.LR_decay = 0.9995
+    args.num_of_epochs = 50
+    args.batch_size = 500
     args.optimizer = 'ADAM'
     args.loss = 'categorical_crossentropy'
 
-    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'LETTER')
+    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'ADULT')
 
     args.datapath = os.path.join(args.datadir, 'split_data')
-    train_path, val_path, test_path = create_letters_dataset(args)
+    train_path, val_path, test_path = create_adult_dataset(args)
 
     params = {'batch_size': args.batch_size,
               'shuffle': True,
               'num_workers': 0}
 
     # create train,val,test data_loader
-    training_set = Letter_dataset.Letters(train_path)
+    training_set = Adult_dataset.Adult_Not_1_hot(train_path)
     train_loader = torch.utils.data.DataLoader(training_set, **params)
 
     train_mean = train_loader.dataset.mean
     train_std = train_loader.dataset.std
 
-    validation_set = Letter_dataset.Letters(val_path, train_mean, train_std)
+    validation_set = Adult_dataset.Adult_Not_1_hot(val_path, train_mean, train_std)
     validation_loader = torch.utils.data.DataLoader(validation_set, **params)
 
-    testing_set = Letter_dataset.Letters(test_path, train_mean, train_std)
+    testing_set = Adult_dataset.Adult_Not_1_hot(test_path, train_mean, train_std)
     test_loader = torch.utils.data.DataLoader(testing_set, **params)
 
     # Letter recognition dataset has 16 features
-    D_in = 16
-    D_out_1 = 12
-    D_out_2 = 10
-    D_out = 26
+    D_in = 12
+    D_out = 2
     args.input_size = [args.batch_size, D_in]
     # Decide on the ferns parameters and sparse table parameters
     # Fern parameters should include:
@@ -85,14 +86,10 @@ def main():
     # Sparse Table should include:
     #   D_out - number of features for next layer
     args.Fern_layer = [
-        {'K': 8, 'M': 100, 'num_of_features': D_in},
-        {'K': 7, 'M': 50, 'num_of_features': D_out_1},
-        {'K': 6, 'M': 50, 'num_of_features': D_out_2}
+        {'K': 7, 'M': 50, 'num_of_features': D_in}
     ]
     args.ST_layer = [
-        {'Num_of_active_words': 2**args.Fern_layer[0]['K'], 'D_out': D_out_1},
-        {'Num_of_active_words': 2**args.Fern_layer[1]['K'], 'D_out': D_out_2},
-        {'Num_of_active_words': 2**args.Fern_layer[2]['K'], 'D_out': D_out}
+        {'Num_of_active_words': 2**args.Fern_layer[0]['K'], 'D_out': D_out}
     ]
 
     args.prune_type = 1
@@ -103,10 +100,7 @@ def main():
 
     model = HTE(args, args.input_size, device)
 
-    voting_table_LR_params_list = ['voting_table_layers.0.weights', 'voting_table.layers.0.bias',
-                                   'voting_table_layers.1.weights', 'voting_table.layers.1.bias',
-                                   'voting_table_layers.2.weights', 'voting_table.layers.2.bias',
-                                   ]
+    voting_table_LR_params_list = ['voting_table_layers.0.weights', 'voting_table.layers.0.bias']
     voting_table_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] in voting_table_LR_params_list, model.named_parameters()))))
     word_calc_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] not in voting_table_LR_params_list, model.named_parameters()))))
 
@@ -121,6 +115,7 @@ def main():
         paths_to_save_anneal_params.append(os.path.join(saving_path, 'ambiguity_thresholds_layer_'+str(i)+'.p'))
         paths_to_save_anneal_params.append(os.path.join(saving_path, 'anneal_params_'+str(i+1)+'.p'))
     args.paths_to_save = paths_to_save_anneal_params
+
 
     def save_model_anneal_params(model, paths_to_save):
         for i in range(0, args.number_of_layers*2,2):
@@ -141,9 +136,6 @@ def main():
         os.makedirs(saving_path)
 
     final_model = train_loop(args, train_loader, validation_loader, model, optimizer, criterion, device, saving_path, save_model_anneal_params)
-
-    #save model and ambiguity_thresholds
-    torch.save(final_model.state_dict(), os.path.join(saving_path, 'final_model_parameters.pth'))
 
     final_paths = []
     for i in range(0,args.number_of_layers*2,2):

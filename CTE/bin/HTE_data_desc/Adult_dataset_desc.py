@@ -194,31 +194,33 @@ df_filled_OH = pd.get_dummies(df_filled,
                                prefix=["workclass", "education", "marital.status", "occupation", "relationship", "race",
                                        "sex", "native.country", "income"])
 print(df_filled_OH.head(30))
+df_filled_OH.to_csv("D:/Datasets/ADULT/AdultOneHot.csv")
 
-###  Label Encoding
-print("\n\n\nAfter Label Encoding\n-----------------------------------")
-df_filled_labeling_encoding = df_filled
-df_filled_labeling_encoding["workclass"] = df_filled["workclass"].astype('category')
-df_filled_labeling_encoding["education"] = df_filled["education"].astype('category')
-df_filled_labeling_encoding["marital.status"] = df_filled["marital.status"].astype('category')
-df_filled_labeling_encoding["occupation"] = df_filled["occupation"].astype('category')
-df_filled_labeling_encoding["relationship"] = df_filled["relationship"].astype('category')
-df_filled_labeling_encoding["race"] = df_filled["race"].astype('category')
-df_filled_labeling_encoding["sex"] = df_filled["sex"].astype('category')
-df_filled_labeling_encoding["native.country"] = df_filled["native.country"].astype('category')
-df_filled_labeling_encoding["income"] = df_filled["income"].astype('category')
 
-df_filled_labeling_encoding["workclass.cat"] = df_filled["workclass"].cat.codes
-df_filled_labeling_encoding["education.cat"] = df_filled["education"].cat.codes
-df_filled_labeling_encoding["marital.status.cat"] = df_filled["marital.status"].cat.codes
-df_filled_labeling_encoding["occupation.cat"] = df_filled["occupation"].cat.codes
-df_filled_labeling_encoding["relationship.cat"] = df_filled["relationship"].cat.codes
-df_filled_labeling_encoding["race.cat"] = df_filled["race"].cat.codes
-df_filled_labeling_encoding["sex.cat"] = df_filled["sex"].cat.codes
-df_filled_labeling_encoding["native.country.cat"] = df_filled["native.country"].cat.codes
-df_filled_labeling_encoding["income.cat"] = df_filled["income"].cat.codes
-print(df_filled.head(20))
-
+# ###  Label Encoding
+# print("\n\n\nAfter Label Encoding\n-----------------------------------")
+# df_filled_labeling_encoding = df_filled
+# df_filled_labeling_encoding["workclass"] = df_filled["workclass"].astype('category')
+# df_filled_labeling_encoding["education"] = df_filled["education"].astype('category')
+# df_filled_labeling_encoding["marital.status"] = df_filled["marital.status"].astype('category')
+# df_filled_labeling_encoding["occupation"] = df_filled["occupation"].astype('category')
+# df_filled_labeling_encoding["relationship"] = df_filled["relationship"].astype('category')
+# df_filled_labeling_encoding["race"] = df_filled["race"].astype('category')
+# df_filled_labeling_encoding["sex"] = df_filled["sex"].astype('category')
+# df_filled_labeling_encoding["native.country"] = df_filled["native.country"].astype('category')
+# df_filled_labeling_encoding["income"] = df_filled["income"].astype('category')
+#
+# df_filled_labeling_encoding["workclass.cat"] = df_filled["workclass"].cat.codes
+# df_filled_labeling_encoding["education.cat"] = df_filled["education"].cat.codes
+# df_filled_labeling_encoding["marital.status.cat"] = df_filled["marital.status"].cat.codes
+# df_filled_labeling_encoding["occupation.cat"] = df_filled["occupation"].cat.codes
+# df_filled_labeling_encoding["relationship.cat"] = df_filled["relationship"].cat.codes
+# df_filled_labeling_encoding["race.cat"] = df_filled["race"].cat.codes
+# df_filled_labeling_encoding["sex.cat"] = df_filled["sex"].cat.codes
+# df_filled_labeling_encoding["native.country.cat"] = df_filled["native.country"].cat.codes
+# df_filled_labeling_encoding["income.cat"] = df_filled["income"].cat.codes
+# print(df_filled.head(20))
+# df_filled.to_csv("D:/Datasets/ADULT/AdultLabelEncoding.csv")
 '''
 Data Visualisation
 '''
