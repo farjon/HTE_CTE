@@ -98,6 +98,7 @@ def main():
     if args.loss == 'categorical_crossentropy':
         criterion = nn.CrossEntropyLoss(reduction='sum')
 
+    args.number_of_batches = train_loader.dataset.examples.shape[0] / args.batch_size
     model = HTE(args, args.input_size, device)
 
     voting_table_LR_params_list = ['voting_table_layers.0.weights', 'voting_table.layers.0.bias']

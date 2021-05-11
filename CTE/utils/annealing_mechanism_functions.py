@@ -157,9 +157,10 @@ def update_ambiguity_thresholds(anneal_state_params, ambiguity_thresholds, bit_f
 
     return anneal_state_params, ambiguity_thresholds
 
-def init_anneal_state_tabular(anneal_state_params = None):
+def init_anneal_state_tabular(args, anneal_state_params = None):
     '''
     initializing the annealing mechanism parameters, if a parameter (or all) is missing in the input, defualt values are assigned
+    :param args: arguments of the training procedure
     :param anneal_state_params: dictionary holding the annealing mechanism parameters. If none - defualt valeus will be assigned to each parameter.
     :return: anneal_state_params
     '''
@@ -179,13 +180,13 @@ def init_anneal_state_tabular(anneal_state_params = None):
         anneal_state_params['prev_ambiguity_th_weight'] = 0
     if 'use_sign_condition' not in anneal_state_params:
         anneal_state_params['use_sign_condition'] = True
-    # calculated for batch_size = 200 and Rho starting at 0.7 for last epoch to be at 0.05 (after 70 epochs)
+    # rho = 0 is set to 0.00001, the model will run with hard ferns for 3 epochs
     if 'cooling_rate' not in anneal_state_params:
-        anneal_state_params['cooling_rate'] = 0.998
+        anneal_state_params['cooling_rate'] = (0.00001/anneal_state_params['Rho'])**(1/((args.num_of_epochs-3)*args.number_of_batches))
     if 'tempature' not in anneal_state_params:
         anneal_state_params['tempature'] = 1
     if 'tempature_heat_rate' not in anneal_state_params:
-        anneal_state_params['tempature_heat_rate'] = 1.001
+        anneal_state_params['tempature_heat_rate'] = 1.0005
     return anneal_state_params
 
 def update_Rho_tempature_tabular(anneal_state_params):
