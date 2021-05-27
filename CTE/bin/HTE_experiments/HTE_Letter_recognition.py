@@ -113,10 +113,16 @@ def main():
     voting_table_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] in voting_table_LR_params_list, model.named_parameters()))))
     word_calc_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] not in voting_table_LR_params_list, model.named_parameters()))))
 
-    optimizer = optim.Adam([{'params': word_calc_params},
-                           {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
-                              lr=args.word_calc_learning_rate)
-
+    if args.optimizer == 'ADAM':
+        optimizer = optim.Adam([{'params': word_calc_params},
+                               {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
+                                  lr=args.word_calc_learning_rate)
+    elif args.optimizer == 'sgd':
+        optimizer = optim.SGD([{'params': word_calc_params},
+                               {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
+                                  lr=args.word_calc_learning_rate)
+    else:
+        assert 'no such optimizer, use only ADAM or sgd'
     saving_path = os.path.join(args.save_path)
 
     paths_to_save_anneal_params = []
