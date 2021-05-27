@@ -32,7 +32,7 @@ def main():
 
     # path to save models
     experiment_name = 'HTE-Letter-Recognition-resnet'
-    experiment_number = '2_2'
+    experiment_number = '2_3'
     args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
@@ -46,7 +46,7 @@ def main():
     args.LR_decay = 0.999
     args.num_of_epochs = 50
     args.batch_size = 400
-    args.optimizer = 'ADAM'
+    args.optimizer = 'sgd'
     args.loss = 'categorical_crossentropy'
     args.batch_norm = True
 
