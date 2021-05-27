@@ -9,7 +9,8 @@ from itertools import count
 
 
 
-def train_loop(args, train_loader, validation_loader, model, optimizer, criterion, device, saving_path, save_anneal_func):
+# def train_loop(args, train_loader, validation_loader, model, optimizer, criterion, device, saving_path, save_anneal_func):
+def train_loop(args, train_loader, model, optimizer, criterion, device, saving_path, save_anneal_func):
     paths_to_save = args.paths_to_save
     best_accuracy = 0
     model.to(device)
@@ -37,33 +38,35 @@ def train_loop(args, train_loader, validation_loader, model, optimizer, criterio
             loss.backward()
             optimizer.step()
             model.on_batch_ends(device)
-            print('batch %d loss: %.3f,  time: %.3f' %
-                  (batch_index + 1, loss, time.time() - end))
+            print('epoch %d/%d, batch %d/%d loss: %.3f,  time: %.3f' %
+                  (epoch + 1, args.num_of_epochs, batch_index + 1, args.number_of_batches, loss, time.time() - end))
             end = time.time()
             batch_index+=1
         optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * args.LR_decay
         optimizer.param_groups[1]['lr'] = optimizer.param_groups[1]['lr'] * args.LR_decay
 
-        correct = 0
-        total = 0
-        with torch.no_grad():
-            for inputs_val, labels_val in validation_loader:
-                inputs_val = inputs_val.to(device)
-                labels_val = labels_val.to(device)
-                outputs_val = model(inputs_val)
-                _, predicted = torch.max(outputs_val.data, 1)
-                total += labels_val.size(0)
-                correct += (predicted == labels_val).sum().item()
+        # correct = 0
+        # total = 0
+        # with torch.no_grad():
+        #     for inputs_val, labels_val in validation_loader:
+        #         inputs_val = inputs_val.to(device)
+        #         labels_val = labels_val.to(device)
+        #         outputs_val = model(inputs_val)
+        #         _, predicted = torch.max(outputs_val.data, 1)
+        #         total += labels_val.size(0)
+        #         correct += (predicted == labels_val).sum().item()
+        #
+        #         # print statistics
+        #     print('Accuracy of the network on the %d validation examples: %.2f %%' % (validation_loader.dataset.examples.shape[0],
+        #             100 * correct / total))
+        #     if best_accuracy < (correct / total):
+        #         torch.save(model.state_dict(), os.path.join(saving_path, 'best_model_parameters.pth'))
+        #         save_anneal_func(model, paths_to_save)
+        #         best_accuracy = correct/total
 
-                # print statistics
-            print('Accuracy of the network on the %d validation examples: %.2f %%' % (validation_loader.dataset.examples.shape[0],
-                    100 * correct / total))
-            if best_accuracy < (correct / total):
-                torch.save(model.state_dict(), os.path.join(saving_path, 'best_model_parameters.pth'))
-                save_anneal_func(model, paths_to_save)
-                best_accuracy = correct/total
         if args.debug and args.visu_progress:
-            accuracy_graph.append((correct / total))
+            # accuracy_graph.append((correct / total))
+            accuracy_graph.append(1)
             loss_for_epoch.append((running_loss_graph/number_of_batchs))
             x_values.append(next(index))
             ax1 = plt.subplot(1, 2, 1)

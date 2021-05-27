@@ -186,7 +186,7 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
     if 'tempature' not in anneal_state_params:
         anneal_state_params['tempature'] = 1
     if 'tempature_heat_rate' not in anneal_state_params:
-        anneal_state_params['tempature_heat_rate'] = 1.0005
+        anneal_state_params['tempature_heat_rate'] = 1.0015
     return anneal_state_params
 
 def update_Rho_tempature_tabular(anneal_state_params):
@@ -205,13 +205,13 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
 
     :param anneal_state_params:
     :param ambiguity_thresholds:
-    :param bit_function_values: a list of size (1, number_of_ferns) each holding a tensor of size (K, N*H*W)
+    :param bit_function_values: a list of size (1, number_of_ferns) each holding a tensor of size (N, K)
             containing the bit functions values for image and location
     :return:
     '''
     if anneal_state_params['count_till_update'] < anneal_state_params['batch_till_update']:
         anneal_state_params['count_till_update'] += 1
-        anneal_state_params['prev_ambiguity_th_weight'] = 0.99
+        anneal_state_params['prev_ambiguity_th_weight'] = 0.999
     else:
         anneal_state_params['batch_till_update'] = 1
         anneal_state_params['count_till_update'] = 0
@@ -229,25 +229,19 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
 
             num_of_samples = torch.min(torch.tensor([anneal_state_params['sample_size'], num_of_values])).to(device)
 
-
             random_sample_indices = (torch.randperm(num_of_values).to(device))[:num_of_samples]
-            B_values, B_indices = torch.sort(torch.abs(bit_function_values[fern][random_sample_indices, :]))
+            B_values, B_indices = torch.sort(torch.abs(bit_function_values[fern][random_sample_indices, :]), dim = 0)
 
             current_ambiguity_th.append(torch.zeros(2, K).to(device))
             for bit_function in range(K):
                 if Rho[0, bit_function] == 0:
                     continue
-                Rho_percentile = torch._cast_Int(Rho[0, bit_function] * B_values[bit_function, :].size(0))
-                threshold = B_values[bit_function, Rho_percentile] + 1e-6;
-                if (threshold > 0):
-                    current_ambiguity_th[fern][0, bit_function] = threshold # positive threshold
-                    current_ambiguity_th[fern][1, bit_function] = -threshold # negative threshold
-                else:
-                    current_ambiguity_th[fern][0, bit_function] = -threshold  # positive threshold
-                    current_ambiguity_th[fern][1, bit_function] = threshold  # negative threshold
+                Rho_percentile = torch.floor_(Rho[0, bit_function] * num_of_samples).int()
+                threshold = B_values[Rho_percentile, bit_function] + 1e-6;
+                current_ambiguity_th[fern][0, bit_function] = threshold
+                current_ambiguity_th[fern][1, bit_function] = -threshold
 
             ambiguity_thresholds[fern] = (anneal_state_params['prev_ambiguity_th_weight'] * ambiguity_thresholds[fern]
                                           + (1 - anneal_state_params['prev_ambiguity_th_weight']) *
                                           current_ambiguity_th[fern])
-
     return anneal_state_params, ambiguity_thresholds

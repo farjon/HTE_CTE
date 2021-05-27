@@ -559,7 +559,7 @@ class FernBitWord_tabular(nn.Module):
         self.alpha = nn.Parameter((torch.from_numpy(np.random.rand(num_of_ferns, K, d_in)).type(torch.float32)).to(device))
         self.th = nn.Parameter(torch.from_numpy(np.zeros([num_of_ferns, K])).to(device))
         self.ambiguity_thresholds = init_ambiguity_thresholds(self.num_of_ferns, self.num_of_bit_functions, device)
-        self.anneal_state_params = init_anneal_state_tabular()
+        self.anneal_state_params = init_anneal_state_tabular(args)
         self.args = args
         self.device = device
         self.alpha_after_softmax = torch.zeros_like(self.alpha)
