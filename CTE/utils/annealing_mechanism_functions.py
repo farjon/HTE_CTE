@@ -170,7 +170,7 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
     if 'sample_size' not in anneal_state_params:
         anneal_state_params['sample_size'] = 1000
     if 'Rho' not in anneal_state_params:
-        anneal_state_params['Rho'] = 0.7
+        anneal_state_params['Rho'] = 0.8
     if 'batch_till_update' not in anneal_state_params:
         anneal_state_params['batch_till_update'] = 0
     if 'count_till_update' not in anneal_state_params:
@@ -180,13 +180,14 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
         anneal_state_params['prev_ambiguity_th_weight'] = 0
     if 'use_sign_condition' not in anneal_state_params:
         anneal_state_params['use_sign_condition'] = True
-    # rho = 0 is set to 0.00001, the model will run with hard ferns for 3 epochs
+    # rho = 0 is set to 0.00001, the model will run with hard ferns for 5 epochs
     if 'cooling_rate' not in anneal_state_params:
-        anneal_state_params['cooling_rate'] = (0.00001/anneal_state_params['Rho'])**(1/((args.num_of_epochs-3)*args.number_of_batches))
+        anneal_state_params['cooling_rate'] = ((1/args.batch_size)/anneal_state_params['Rho'])**(1/((args.num_of_epochs-5)*args.number_of_batches))
     if 'tempature' not in anneal_state_params:
         anneal_state_params['tempature'] = 1
+    # we want beta to reach 10 at the end of training
     if 'tempature_heat_rate' not in anneal_state_params:
-        anneal_state_params['tempature_heat_rate'] = 1.0015
+        anneal_state_params['tempature_heat_rate'] = np.exp(np.log(10)/(args.number_of_batches*args.num_of_epochs))
     return anneal_state_params
 
 def update_Rho_tempature_tabular(anneal_state_params):
@@ -211,7 +212,7 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
     '''
     if anneal_state_params['count_till_update'] < anneal_state_params['batch_till_update']:
         anneal_state_params['count_till_update'] += 1
-        anneal_state_params['prev_ambiguity_th_weight'] = 0.999
+        anneal_state_params['prev_ambiguity_th_weight'] = 0.995
     else:
         anneal_state_params['batch_till_update'] = 1
         anneal_state_params['count_till_update'] = 0
@@ -234,14 +235,19 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
 
             current_ambiguity_th.append(torch.zeros(2, K).to(device))
             for bit_function in range(K):
+                if Rho[0, bit_function] <= 1/num_of_samples.item():
+                    current_ambiguity_th[fern][0, bit_function] = 0
+                    current_ambiguity_th[fern][1, bit_function] = 0
+                    continue
                 if Rho[0, bit_function] == 0:
                     continue
                 Rho_percentile = torch.floor_(Rho[0, bit_function] * num_of_samples).int()
-                threshold = B_values[Rho_percentile, bit_function] + 1e-6;
+                threshold = B_values[Rho_percentile, bit_function] + 1e-6
                 current_ambiguity_th[fern][0, bit_function] = threshold
                 current_ambiguity_th[fern][1, bit_function] = -threshold
 
             ambiguity_thresholds[fern] = (anneal_state_params['prev_ambiguity_th_weight'] * ambiguity_thresholds[fern]
                                           + (1 - anneal_state_params['prev_ambiguity_th_weight']) *
                                           current_ambiguity_th[fern])
+        # print(ambiguity_thresholds[0])
     return anneal_state_params, ambiguity_thresholds

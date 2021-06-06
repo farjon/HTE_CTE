@@ -32,7 +32,7 @@ def main():
 
     # path to save models
     experiment_name = 'HTE-Letter-Recognition-resnet'
-    experiment_number = '2_3'
+    experiment_number = '0_1'
     args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
@@ -46,7 +46,7 @@ def main():
     args.LR_decay = 0.999
     args.num_of_epochs = 50
     args.batch_size = 400
-    args.optimizer = 'sgd'
+    args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
     args.batch_norm = True
 
@@ -76,7 +76,6 @@ def main():
     # Letter recognition dataset has 16 features
     D_in = 16
     D_out_1 = 16
-    # D_out_2 = 16
     D_out = 26
     args.input_size = [args.batch_size, D_in]
     # Decide on the ferns parameters and sparse table parameters

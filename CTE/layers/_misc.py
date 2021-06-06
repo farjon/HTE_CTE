@@ -675,8 +675,8 @@ class FernSparseTable_tabular(nn.Module):
         (3) creating the indices tensor (IT) and actiovation tensor (AT)
         (4) sparse multiplication of IT, AT with the corresponding tables (holding the features of the layer)
 
-        :param B: a 4D tensor of size (N, M*K, H, W) containing the bit function values
-        :return: output: a 4D tensor (N, D_out, H, W) containing the features of the current layer. D_out is should be
+        :param B: a 3D tensor of size (N, M, K) containing the bit function values
+        :return: output: a 2D tensor (N, D_out) containing the features of the current layer. D_out is should be
         pre-determind.
         '''
         N = B.size()[0]

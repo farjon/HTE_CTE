@@ -24,7 +24,7 @@ class Yeast(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         example = np.float32(self.examples.loc[index].values)
-        # example = np.float32((example - self.mean)/self.std)
+        example = np.float32((example - self.mean)/self.std)
         labels = self.labels.loc[index].values
         labels = torch.from_numpy(np.asarray(labels)).__long__()
         return example, labels
