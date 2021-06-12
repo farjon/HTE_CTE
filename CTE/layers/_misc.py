@@ -688,15 +688,23 @@ class FernSparseTable_tabular(nn.Module):
 
         # Get indices and activations for most probable words
         for m in range(self.num_of_ferns):
-            start_ind = (m * self.num_of_bit_functions)
-            end_ind = (m + 1) * self.num_of_bit_functions
-            i, a = self.get_activations_and_indices(B[:, m, :])
-            activations[:, m*self.num_of_active_words: (m+1)*self.num_of_active_words] = a
-            IT[:, m * self.num_of_active_words: (m + 1) * self.num_of_active_words] = i
+            current_fern = B[:, m, :]
+            if (current_fern - current_fern.int()).sum() == 0:
+                activity = torch.zeros([N, self.num_of_active_words])
+                activity[:,0] = 1
+                words = torch.zeros([N, self.num_of_active_words])
+                words[:, 0] = torch.sum(torch.mul(current_fern, torch.pow(2, self.indices_help_tensor)), 1)
+            else:
+                words, activity = self.get_activations_and_indices(current_fern)
+            activations[:, m*self.num_of_active_words: (m+1)*self.num_of_active_words] = activity
+            IT[:, m * self.num_of_active_words: (m + 1) * self.num_of_active_words] = words
 
         AT = activations
         IT = torch._cast_Int(IT)
         output = torch.zeros([N, self.d_out]).to(self.device)
+        # debug - check the number of average active words
+        AT_bin = AT > 0.0001
+        print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
 
         inds_vector = torch.arange(0, N, dtype=torch.int32)
         rows = inds_vector.repeat(self.num_of_active_words).to(self.device)

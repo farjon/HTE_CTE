@@ -11,7 +11,7 @@ from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_e
 from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.utils.datasets.create_letters_dataset import main as create_letters_dataset
 
-def main():
+def main(args = None):
     # device = torch.device('cpu')
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
@@ -20,10 +20,10 @@ def main():
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
     torch.manual_seed(0)
-
-    # create args struct for all parameters
-    parser = argparse.ArgumentParser(description="HTE model")
-    args = parser.parse_args()
+    if args is None:
+        # create args struct for all parameters
+        parser = argparse.ArgumentParser(description="HTE model")
+        args = parser.parse_args()
 
     #debug_mode - also used to visualize and follow specific parameters. See ../CTE/utils/visualize_function.py
     args.debug = True
@@ -32,7 +32,7 @@ def main():
 
     # path to save models
     experiment_name = 'HTE-Letter-Recognition-resnet'
-    experiment_number = '0_1'
+    experiment_number = args.experiment_number
     args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
@@ -40,11 +40,11 @@ def main():
                                         experiment_number)
 
     # optimization Parameters
-    args.word_calc_learning_rate = 0.01
+    args.word_calc_learning_rate = 0.001
     args.voting_table_learning_rate = 0.01
 
-    args.LR_decay = 0.999
-    args.num_of_epochs = 50
+    args.LR_decay = 0.99
+    args.num_of_epochs = 60
     args.batch_size = 400
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
@@ -75,7 +75,8 @@ def main():
 
     # Letter recognition dataset has 16 features
     D_in = 16
-    D_out_1 = 16
+    # D_out_1 = 16
+    # D_out_2 = 16
     D_out = 26
     args.input_size = [args.batch_size, D_in]
     # Decide on the ferns parameters and sparse table parameters
@@ -85,14 +86,16 @@ def main():
     #   L - patch size
     # Sparse Table should include:
     #   D_out - number of features for next layer
+    K = args.number_of_BF
+    M = args.num_of_ferns
     args.Fern_layer = [
-        {'K': 7, 'M': 50, 'num_of_features': D_in},
-        {'K': 7, 'M': 50, 'num_of_features': D_out_1}
-        # {'K': 7, 'M': 70, 'num_of_features': D_out_2}
+        {'K': K, 'M': M, 'num_of_features': D_in},
+        # {'K': 7, 'M': 50, 'num_of_features': D_out_1},
+        # {'K': 7, 'M': 100, 'num_of_features': D_out_2}
     ]
     args.ST_layer = [
-        {'Num_of_active_words': 2**args.Fern_layer[0]['K'], 'D_out': D_out_1},
-        {'Num_of_active_words': 2**args.Fern_layer[1]['K'], 'D_out': D_out},
+        {'Num_of_active_words': 2**(K-1), 'D_out': D_out},
+        # {'Num_of_active_words': 2**(args.Fern_layer[1]['K']-1), 'D_out': D_out},
         # {'Num_of_active_words': 2**args.Fern_layer[2]['K'], 'D_out': D_out},
     ]
 
@@ -106,7 +109,7 @@ def main():
     model = HTE(args, args.input_size, device)
 
     voting_table_LR_params_list = ['voting_table_layers.0.weights', 'voting_table.layers.0.bias',
-                                   'voting_table_layers.1.weights', 'voting_table.layers.1.bias',
+                                   # 'voting_table_layers.1.weights', 'voting_table.layers.1.bias',
                                    # 'voting_table_layers.2.weights', 'voting_table.layers.2.bias'
                                    ]
     voting_table_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] in voting_table_LR_params_list, model.named_parameters()))))

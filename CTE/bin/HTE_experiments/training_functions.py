@@ -16,7 +16,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, saving_p
     model.to(device)
     # plotting variables
     x_values = []
-    accuracy_graph = []
+    rho_graph = []
     loss_for_epoch = []
     index = count()
     end = time.time()
@@ -38,8 +38,9 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, saving_p
             loss.backward()
             optimizer.step()
             model.on_batch_ends(device)
-            print('epoch %d/%d, batch %d/%d loss: %.3f,  time: %.3f' %
-                  (epoch + 1, args.num_of_epochs, batch_index + 1, args.number_of_batches, loss, time.time() - end))
+            rho = model.word_calc_layers._modules['0'].anneal_state_params['Rho']
+            print('epoch %d/%d, batch %d/%d loss: %.3f,  time: %.3f, rho: %.5f' %
+                  (epoch + 1, args.num_of_epochs, batch_index + 1, args.number_of_batches, loss, time.time() - end, rho))
             end = time.time()
             batch_index+=1
         optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * args.LR_decay
@@ -66,17 +67,18 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, saving_p
 
         if args.debug and args.visu_progress:
             # accuracy_graph.append((correct / total))
-            accuracy_graph.append(1)
+            rho_graph.append(rho)
             loss_for_epoch.append((running_loss_graph/number_of_batchs))
             x_values.append(next(index))
             ax1 = plt.subplot(1, 2, 1)
-            ax1.plot(x_values, accuracy_graph, label='accuracy')
+            ax1.plot(x_values, rho_graph, label='accuracy')
             ax1.set_xlim([0, args.num_of_epochs])
             ax1.set_ylim([0, 1])
-            ax1.set_title('best accuracy is %.2f' %(best_accuracy))
+            ax1.set_title('Rho values')
             ax2 = plt.subplot(1, 2, 2)
             ax2.plot(x_values, loss_for_epoch, label='loss')
             ax2.set_xlim([0, args.num_of_epochs])
+            ax2.set_title('Loss values')
             # plt.legend()
             plt.draw()
             if epoch == args.num_of_epochs - 1:
