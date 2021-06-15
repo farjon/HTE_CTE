@@ -32,7 +32,10 @@ def main(args = None):
 
     # path to save models
     experiment_name = 'HTE-Letter-Recognition-resnet'
-    experiment_number = args.experiment_number
+    if hasattr(args, 'experiment_number'):
+        experiment_number = args.experiment_number
+    else:
+        experiment_number = 'r1'
     args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
@@ -86,8 +89,14 @@ def main(args = None):
     #   L - patch size
     # Sparse Table should include:
     #   D_out - number of features for next layer
-    K = args.number_of_BF
-    M = args.num_of_ferns
+    if hasattr(args, 'number_of_BF'):
+        K = args.number_of_BF
+    else:
+        K = 7
+    if hasattr(args, 'num_of_ferns'):
+        M = args.num_of_ferns
+    else:
+        M = 10
     args.Fern_layer = [
         {'K': K, 'M': M, 'num_of_features': D_in},
         # {'K': 7, 'M': 50, 'num_of_features': D_out_1},
@@ -192,9 +201,9 @@ def main(args = None):
                                 path_to_parameters_save,
                                 path_to_hyper_parameters_save)
 
-    from sklearn.metrics import confusion_matrix
-    con_mat = confusion_matrix(y_true, y_pred)
-    print(con_mat)
+    # from sklearn.metrics import confusion_matrix
+    # con_mat = confusion_matrix(y_true, y_pred)
+    # print(con_mat)
     # test_model = HTE(args, args.input_size, device)
     # test_model.load_state_dict(torch.load(os.path.join(saving_path, 'best_model_parameters.pth')), strict=False)
     # test_model = load_model_anneal_params(test_model, args.paths_to_save)
@@ -224,6 +233,7 @@ def main(args = None):
     #                             (100 * correct / total), total,
     #                             path_to_parameters_save,
     #                             path_to_hyper_parameters_save)
+    return
 
 if __name__ == '__main__':
     main()
