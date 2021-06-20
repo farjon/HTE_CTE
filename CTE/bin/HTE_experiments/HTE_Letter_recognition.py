@@ -47,7 +47,7 @@ def main(args = None):
     args.voting_table_learning_rate = 0.01
 
     args.LR_decay = 0.99
-    args.num_of_epochs = 60
+    args.num_of_epochs = 30
     args.batch_size = 400
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'

@@ -17,15 +17,17 @@ def line_search():
 
     num_of_ferns = [10, 10, 70, 100, 150, 200]
     number_of_BF = [3, 3, 7, 7, 7, 7]
-    parser = argparse.ArgumentParser()
-    args = parser.parse_args()
+
 
     for i in range(len(num_of_ferns)):
+        parser = argparse.ArgumentParser()
+        args = parser.parse_args()
         args.experiment_number = "line_search_1_layer_" + str(i)
         args.num_of_ferns = num_of_ferns[i]
         args.number_of_BF = number_of_BF[i]
 
         main(args)
+        del args
 
 if __name__ == '__main__':
     line_search()
