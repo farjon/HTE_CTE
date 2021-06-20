@@ -27,7 +27,7 @@ def main(args = None):
 
     #debug_mode - also used to visualize and follow specific parameters. See ../CTE/utils/visualize_function.py
     args.debug = True
-    args.visu_progress = True
+    args.visu_progress = False
     args.draw_line = True
 
     # path to save models
@@ -43,7 +43,7 @@ def main(args = None):
                                         experiment_number)
 
     # optimization Parameters
-    args.word_calc_learning_rate = 0.001
+    args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
 
     args.LR_decay = 0.99
@@ -61,7 +61,7 @@ def main(args = None):
 
     params = {'batch_size': args.batch_size,
               'shuffle': True,
-              'num_workers': 0}
+              'num_workers': 4}
 
     # create train,val,test data_loader
     training_set = Letter_dataset.Letters(train_path)
