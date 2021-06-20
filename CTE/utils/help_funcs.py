@@ -53,7 +53,7 @@ def print_end_experiment_report(args, model, optimizer, test_score, testset_size
                 current_AT = model.word_calc_layers._modules[l_str].ambiguity_thresholds[M][0][K].detach().cpu().numpy()
                 current_thresh = model.word_calc_layers._modules[l_str].th[M][K].detach().cpu().numpy()
                 current_alpha_val_BS = np.max(model.word_calc_layers._modules[l_str].alpha[M][K].detach().cpu().numpy())
-                current_alpha_val_AS = np.max(model.word_calc_layers._modules[l_str].alpha_after_softmax[M][K].detach().cpu().numpy())
+                current_alpha_val_AS = np.max(model.word_calc_layers._modules[l_str].alpha_after_softmax[M][K])
                 current_alpha_num = np.argmax(model.word_calc_layers._modules[l_str].alpha[M][K].detach().cpu().numpy())
                 csv_writer.writerow([layer, M, K, current_alpha_num, current_alpha_val_BS, current_alpha_val_AS, current_thresh, current_AT])
     csv_file.close()

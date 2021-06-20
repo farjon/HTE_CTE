@@ -562,7 +562,7 @@ class FernBitWord_tabular(nn.Module):
         self.anneal_state_params = init_anneal_state_tabular(args)
         self.args = args
         self.device = device
-        self.alpha_after_softmax = torch.zeros_like(self.alpha)
+        self.alpha_after_softmax = np.zeros(self.alpha.shape) # torch.zeros_like(self.alpha)
         #this part is for debug only!
         # temp = np.zeros([num_of_ferns, K, d_in])
         # temp[0, 0, 4] = np.log(3)
@@ -595,10 +595,10 @@ class FernBitWord_tabular(nn.Module):
             current_th = self.th[m]
             Bits[:, m, :], bit_values = self.__Bit(T, softmax_alpha, current_th, self.ambiguity_thresholds[m])
             bit_functions_values.append(bit_values)
-            self.alpha_after_softmax[m] = softmax_alpha
+            self.alpha_after_softmax[m] = softmax_alpha.detach().cpu().numpy()   #Aharon: this line creates the problem  - the mysterious bug. Now fixed
         if self.anneal_state_params['count_till_update'] == self.anneal_state_params['batch_till_update']:
             # save the bit function values for the annealing mechanism
-            self.bit_functions_values = bit_functions_values
+            self.bit_functions_values = bit_functions_values   # This also may be problematic: Detach it.
 
         return Bits
 
@@ -704,7 +704,7 @@ class FernSparseTable_tabular(nn.Module):
         output = torch.zeros([N, self.d_out]).to(self.device)
         # debug - check the number of average active words
         AT_bin = AT > 0.0001
-        print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
+        #print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
 
         inds_vector = torch.arange(0, N, dtype=torch.int32)
         rows = inds_vector.repeat(self.num_of_active_words).to(self.device)

@@ -10,6 +10,7 @@ from torch import optim
 from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
 from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.utils.datasets.create_letters_dataset import main as create_letters_dataset
+from datetime import datetime
 
 def main(args = None):
     # device = torch.device('cpu')
@@ -61,7 +62,7 @@ def main(args = None):
 
     params = {'batch_size': args.batch_size,
               'shuffle': True,
-              'num_workers': 4}
+              'num_workers': 0}
 
     # create train,val,test data_loader
     training_set = Letter_dataset.Letters(train_path)
@@ -161,7 +162,7 @@ def main(args = None):
         os.makedirs(saving_path)
 
     final_model = train_loop(args, train_loader, model, optimizer, criterion, device, saving_path, save_model_anneal_params)
-    # final_model = train_loop(args, train_loader, validation_loader, model, optimizer, criterion, device, saving_path, save_model_anneal_params)
+
 
     #save model and ambiguity_thresholds
     torch.save(final_model.state_dict(), os.path.join(saving_path, 'final_model_parameters.pth'))
@@ -201,39 +202,12 @@ def main(args = None):
                                 path_to_parameters_save,
                                 path_to_hyper_parameters_save)
 
-    # from sklearn.metrics import confusion_matrix
-    # con_mat = confusion_matrix(y_true, y_pred)
-    # print(con_mat)
-    # test_model = HTE(args, args.input_size, device)
-    # test_model.load_state_dict(torch.load(os.path.join(saving_path, 'best_model_parameters.pth')), strict=False)
-    # test_model = load_model_anneal_params(test_model, args.paths_to_save)
-    #
-    # correct = 0
-    # total = 0
-    # with torch.no_grad():
-    #     for inputs_test, labels_test in test_loader:
-    #         inputs_test = inputs_test.to(device)
-    #         labels_test = labels_test.to(device)
-    #         outputs_test = test_model(inputs_test)
-    #         _, predicted = torch.max(outputs_test.data, 1)
-    #         total += labels_test.size(0)
-    #         correct += (predicted == labels_test).sum().item()
-    #
-    #         # print statistics
-    #     print('Accuracy of the network on the %d test examples: %.2f %%' % (
-    #     test_loader.dataset.examples.shape[0],
-    #     100 * correct / total))
-    #
-    # print('Finished Training')
-    # path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-    #                                     experiment_number, 'best_parameters_final_values.csv')
-    # path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-    #                                     experiment_number, 'best_hyper_parameters_values.csv')
-    # print_end_experiment_report(args, test_model, optimizer,
-    #                             (100 * correct / total), total,
-    #                             path_to_parameters_save,
-    #                             path_to_hyper_parameters_save)
+    dateTimeObj = datetime.now()
+    timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+    print('Current Timestamp : ', timestampStr)
+
     return
+
 
 if __name__ == '__main__':
     main()

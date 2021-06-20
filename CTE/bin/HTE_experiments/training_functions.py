@@ -19,7 +19,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, saving_p
     number_of_batchs = args.number_of_batches
     rho = 0
     for epoch in range(args.num_of_epochs):
-        running_loss_graph = 0.0
+        #running_loss_graph = 0.0
         batch_index = 0
         for inputs, labels in train_loader:
             # get the inputs; data is a list of [inputs, labels]
@@ -27,17 +27,19 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, saving_p
             labels = labels.to(device)
             # zero the parameter gradients
             optimizer.zero_grad()
-            # forward + backward + optimize
+            #forward + backward + optimize
             outputs = model(inputs)
             loss = criterion(outputs, labels)
-            running_loss_graph += float(loss.item())
+           # running_loss_graph += float(loss.item())
             loss.backward()
             optimizer.step()
             model.on_batch_ends(device)
-            print('epoch %d/%d, batch %d/%d loss: %.3f,  time: %.3f' %
-                  (epoch + 1, args.num_of_epochs, batch_index + 1, args.number_of_batches, loss, time.time() - end))
+            #print('epoch %d/%d, batch %d/%d loss: %.3f,  time: %.3f' %
+            #      (epoch + 1, args.num_of_epochs, batch_index + 1, args.number_of_batches, loss, time.time() - end))
             end = time.time()
             batch_index+=1
+        print('epoch %d/%d, loss: %.3f,  time: %.3f' %
+              (epoch + 1, args.num_of_epochs, loss, time.time() - end))
         optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * args.LR_decay
         optimizer.param_groups[1]['lr'] = optimizer.param_groups[1]['lr'] * args.LR_decay
 
