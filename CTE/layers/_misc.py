@@ -591,7 +591,7 @@ class FernBitWord_tabular(nn.Module):
         for m in range(self.num_of_ferns):
             current_alpha = self.alpha[m]
             current_alpha_with_tempature = torch.mul(current_alpha, self.anneal_state_params['tempature'])
-            softmax_alpha = torch.nn.functional.softmax(current_alpha_with_tempature)
+            softmax_alpha = torch.nn.functional.softmax(current_alpha_with_tempature, dim=1)
             current_th = self.th[m]
             Bits[:, m, :], bit_values = self.__Bit(T, softmax_alpha, current_th, self.ambiguity_thresholds[m])
             bit_functions_values.append(bit_values)
