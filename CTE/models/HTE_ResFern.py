@@ -14,7 +14,7 @@ class HTE(nn.Module):
         self.voting_table_layers = nn.ModuleList()
         self.batch_norm_layers = nn.ModuleList()
 
-        for i in range(args.number_of_layers):
+        for i in range(args.num_of_layers):
             self.word_calc_layers.append(
                 FernBitWord_tabular(
                     args.Fern_layer[i]['M'],
@@ -42,9 +42,9 @@ class HTE(nn.Module):
                     nn.BatchNorm1d(args.ST_layer[i]['D_out'])
                 )
 
-        self.number_of_layers = args.number_of_layers
+        self.number_of_layers = args.num_of_layers
         self.args = args
-        self.save_fern_bit_values = [None] * args.number_of_layers
+        self.save_fern_bit_values = [None] * args.num_of_layers
 
 
     def forward(self, x):

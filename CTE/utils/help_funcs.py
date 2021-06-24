@@ -46,7 +46,7 @@ def print_end_experiment_report(args, model, optimizer, test_score, testset_size
     csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
     header = ['Layer', 'Fern', 'Bit-F', 'alpha-num', 'alpha-val_BS', 'alpha-val_AS', 'thresh', 'AT']
     csv_writer.writerow(header)
-    for layer in range(args.number_of_layers):
+    for layer in range(args.num_of_layers):
         for M in range(args.Fern_layer[layer]['M']):
             for K in range(args.Fern_layer[layer]['K']):
                 l_str = str(layer)
@@ -62,7 +62,7 @@ def print_end_experiment_report(args, model, optimizer, test_score, testset_size
     path_to_save_file = path_to_hyper_params
     csv_file = open(path_to_save_file, "w")
     csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_ALL, lineterminator='\n')
-    csv_writer.writerow(['number of layers', args.number_of_layers])
+    csv_writer.writerow(['number of layers', args.num_of_layers])
     csv_writer.writerow(['test accuracy', test_score])
     csv_writer.writerow(['test size', testset_size])
     csv_writer.writerow(['number of epochs', args.num_of_epochs])

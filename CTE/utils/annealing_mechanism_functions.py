@@ -182,12 +182,12 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
         anneal_state_params['use_sign_condition'] = True
     # rho = 0 is set to 1/batch_size, the model will run with hard ferns for 5 epochs
     if 'cooling_rate' not in anneal_state_params:
-        anneal_state_params['cooling_rate'] = ((1/args.batch_size)/anneal_state_params['Rho'])**(1/((args.num_of_epochs-15)*args.number_of_batches))
+        anneal_state_params['cooling_rate'] = ((1/args.batch_size)/anneal_state_params['Rho'])**(1/((args.num_of_epochs-10)*args.number_of_batches))
     if 'tempature' not in anneal_state_params:
         anneal_state_params['tempature'] = 1
     # we want beta to reach 5 at the end of training
     if 'tempature_heat_rate' not in anneal_state_params:
-        anneal_state_params['tempature_heat_rate'] = np.exp(np.log(20)/(args.number_of_batches*args.num_of_epochs))
+        anneal_state_params['tempature_heat_rate'] = np.exp(np.log(30)/(args.number_of_batches*args.num_of_epochs))
     return anneal_state_params
 
 def update_Rho_tempature_tabular(anneal_state_params):
@@ -214,7 +214,7 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
         anneal_state_params['count_till_update'] += 1
         anneal_state_params['prev_ambiguity_th_weight'] = 0.992
     else:
-        anneal_state_params['batch_till_update'] = 5
+        anneal_state_params['batch_till_update'] = 3
         anneal_state_params['count_till_update'] = 0
 
 

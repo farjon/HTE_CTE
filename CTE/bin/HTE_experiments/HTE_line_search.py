@@ -21,8 +21,8 @@ def main():
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
     if search_param == 1:
-        num_of_ferns = [150, 200]
-        number_of_BF = [7, 7]
+        num_of_ferns = [20, 50, 70, 200, 150, 200]
+        number_of_BF = [8,8,8,8,8,8]
 
     for i in range(len(num_of_ferns)):
         args.experiment_number = "line_search_" + str(i+4)
@@ -91,7 +91,7 @@ def main():
 
         # Letter recognition dataset has 16 features
         D_in = 16
-        # D_out_1 = 16
+        D_out_1 = 16
         # D_out_2 = 16
         D_out = 26
         args.input_size = [args.batch_size, D_in]
@@ -112,12 +112,12 @@ def main():
             M = 10
         args.Fern_layer = [
             {'K': K, 'M': M, 'num_of_features': D_in},
-            # {'K': 7, 'M': 50, 'num_of_features': D_out_1},
+            {'K': K, 'M': M, 'num_of_features': D_out_1},
             # {'K': 7, 'M': 100, 'num_of_features': D_out_2}
         ]
         args.ST_layer = [
             {'Num_of_active_words': 2**(K-1), 'D_out': D_out},
-            # {'Num_of_active_words': 2**(args.Fern_layer[1]['K']-1), 'D_out': D_out},
+            {'Num_of_active_words': 2**(K-1), 'D_out': D_out_1},
             # {'Num_of_active_words': 2**args.Fern_layer[2]['K'], 'D_out': D_out},
         ]
 
@@ -131,7 +131,7 @@ def main():
         model = HTE(args, args.input_size, device)
 
         voting_table_LR_params_list = ['voting_table_layers.0.weights', 'voting_table.layers.0.bias',
-                                       # 'voting_table_layers.1.weights', 'voting_table.layers.1.bias',
+                                       'voting_table_layers.1.weights', 'voting_table.layers.1.bias',
                                        # 'voting_table_layers.2.weights', 'voting_table.layers.2.bias'
                                        ]
         voting_table_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] in voting_table_LR_params_list, model.named_parameters()))))
