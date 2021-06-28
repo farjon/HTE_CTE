@@ -14,9 +14,9 @@ from CTE.utils.datasets.create_letters_dataset import main as create_letters_dat
 
 def line_search():
     # search parameters
-    num_of_ferns = [20, 50, 70, 100, 150, 200]
-    number_of_BF = [8, 8, 8, 8, 8, 8]
-    num_of_layers = 1
+    num_of_ferns = [20, 50, 70, 100, 150, 200, 300]
+    number_of_BF = [8, 8, 8, 8, 8, 8, 8]
+    num_of_layers = 3
 
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
@@ -57,7 +57,7 @@ def line_search():
 
     for i in range(len(num_of_ferns)):
 
-        args.experiment_number = "line_search_" + str(num_of_layers) + "_layer_" + str(i)
+        args.experiment_number = "line_search_Fern_" + str(num_of_layers) + "_layer_" + str(i)
         args.num_of_ferns = num_of_ferns[i]
         args.number_of_BF = number_of_BF[i]
         args.num_of_layers = num_of_layers
