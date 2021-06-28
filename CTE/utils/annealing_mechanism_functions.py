@@ -10,8 +10,8 @@ def init_ambiguity_thresholds(num_of_ferns, K, device):
     '''
     ambiguity_thresholds = []
     for i in range(num_of_ferns):
-        pos_vector = torch.zeros([1, K], dtype = torch.float32).to(device)
-        neg_vector = torch.zeros([1, K], dtype=torch.float32).to(device)
+        pos_vector = torch.zeros([1, K], dtype = torch.float32, device=device)
+        neg_vector = torch.zeros([1, K], dtype=torch.float32, device=device)
         ambiguity_thresholds.append(torch.cat([pos_vector, neg_vector], dim=0))
 
     return ambiguity_thresholds
@@ -226,14 +226,14 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
             K = bit_function_values[fern].size(1)
             num_of_values = bit_function_values[fern].size(0)
 
-            Rho = anneal_state_params['Rho'] * torch.ones(1, K).to(device)
+            Rho = anneal_state_params['Rho'] * torch.ones(1, K, device=device)
 
-            num_of_samples = torch.min(torch.tensor([anneal_state_params['sample_size'], num_of_values])).to(device)
+            num_of_samples = torch.min(torch.tensor([anneal_state_params['sample_size'], num_of_values], device=device))
 
-            random_sample_indices = (torch.randperm(num_of_values).to(device))[:num_of_samples]
+            random_sample_indices = (torch.randperm(num_of_values, device=device))[:num_of_samples]
             B_values, B_indices = torch.sort(torch.abs(bit_function_values[fern][random_sample_indices, :]), dim = 0)
 
-            current_ambiguity_th.append(torch.zeros(2, K).to(device))
+            current_ambiguity_th.append(torch.zeros(2, K, device=device))
             for bit_function in range(K):
                 if Rho[0, bit_function] <= 1/num_of_samples.item():
                     current_ambiguity_th[fern][0, bit_function] = 0

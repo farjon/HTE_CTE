@@ -33,8 +33,9 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
         for inputs, labels in train_loader:
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = inputs.to(device), labels.to(device)
-            # zero the parameter gradients
-            optimizer.zero_grad()
+            # zero the parameter gradients - this method was reported as a faster way to zero grad
+            for param in model.parameters():
+                param.grad = None
             #forward + backward + optimize
             outputs = model(inputs)
             loss = criterion(outputs, labels)

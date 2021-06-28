@@ -556,8 +556,8 @@ class FernBitWord_tabular(nn.Module):
         super(FernBitWord_tabular, self).__init__()
         self.num_of_ferns = num_of_ferns
         self.num_of_bit_functions = K
-        self.alpha = nn.Parameter((torch.from_numpy(np.random.rand(num_of_ferns, K, d_in)).type(torch.float32)).to(device))
-        self.th = nn.Parameter(torch.from_numpy(np.zeros([num_of_ferns, K])).to(device))
+        self.alpha = nn.Parameter(torch.rand([num_of_ferns, K, d_in], device=device))
+        self.th = nn.Parameter(torch.zeros([num_of_ferns, K], device=device))
         self.ambiguity_thresholds = init_ambiguity_thresholds(self.num_of_ferns, self.num_of_bit_functions, device)
         self.anneal_state_params = init_anneal_state_tabular(args)
         self.args = args
@@ -586,7 +586,7 @@ class FernBitWord_tabular(nn.Module):
         :return: output: a 3D tensor of size (N, M, K) where M is the number_of_ferns, K is the number_of_bit_functions.
             This tensor hold the bit function values for each cell in the input.
         '''
-        Bits = torch.zeros([T.size(0), self.num_of_ferns, self.num_of_bit_functions]).to(self.device)
+        Bits = torch.zeros([T.size(0), self.num_of_ferns, self.num_of_bit_functions], device=self.device)
         bit_functions_values = []
         for m in range(self.num_of_ferns):
             current_alpha = self.alpha[m]
@@ -657,13 +657,13 @@ class FernSparseTable_tabular(nn.Module):
         self.d_out = D_out
         self.prune_type = prune_type
         self.device = device
-        self.weights = nn.Parameter(torch.rand((num_of_ferns, 2**K, D_out)).to(self.device))
-        self.bias = nn.Parameter(torch.zeros(self.d_out).to(self.device))
+        self.weights = nn.Parameter(torch.rand((num_of_ferns, 2**K, D_out), device=device))
+        self.bias = nn.Parameter(torch.zeros(self.d_out, device=device))
         # constant parameters that we only need to create once
         self.constant_inds = torch.from_numpy(self.create_constant_inds(input_shape[0])).to(self.device)
         self.tensor_bit_pattern = self.create_truth_table(input_shape[0])
         self.args = args
-        self.indices_help_tensor = torch.arange(K-1,-1,-1).unsqueeze(0).repeat(input_shape[0], 1).to(self.device)
+        self.indices_help_tensor = torch.arange(K-1,-1,-1, device=device).unsqueeze(0).repeat(input_shape[0], 1)
         # The next two commented rows are for debug purposes
         # mat = torch.arange(0., 2**K).repeat(D_out).reshape(D_out, 2**K).transpose(1,0).cuda()
         # self.weights = mat.repeat([num_of_ferns, 1, 1]).cuda()
@@ -683,16 +683,16 @@ class FernSparseTable_tabular(nn.Module):
         M = B.size()[1]
         K = B.size()[2]
 
-        activations = torch.zeros([N, self.num_of_active_words*self.num_of_ferns]).to(self.device)
-        IT = torch.zeros([N, self.num_of_active_words*self.num_of_ferns]).to(self.device)
+        activations = torch.zeros([N, self.num_of_active_words*self.num_of_ferns], device=self.device)
+        IT = torch.zeros([N, self.num_of_active_words*self.num_of_ferns], device=self.device)
 
         # Get indices and activations for most probable words
         for m in range(self.num_of_ferns):
             current_fern = B[:, m, :]
             if (current_fern - current_fern.int()).sum() == 0:
-                activity = torch.zeros([N, self.num_of_active_words])
+                activity = torch.zeros([N, self.num_of_active_words], device=self.device)
                 activity[:,0] = 1
-                words = torch.zeros([N, self.num_of_active_words])
+                words = torch.zeros([N, self.num_of_active_words], device=self.device)
                 words[:, 0] = torch.sum(torch.mul(current_fern, torch.pow(2, self.indices_help_tensor)), 1)
             else:
                 words, activity = self.get_activations_and_indices(current_fern)
@@ -701,13 +701,13 @@ class FernSparseTable_tabular(nn.Module):
 
         AT = activations
         IT = torch._cast_Int(IT)
-        output = torch.zeros([N, self.d_out]).to(self.device)
+        output = torch.zeros([N, self.d_out], device=self.device)
         # debug - check the number of average active words
-        AT_bin = AT > 0.0001
-        #print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
+        # AT_bin = AT > 0.1
+        # print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
 
-        inds_vector = torch.arange(0, N, dtype=torch.int32)
-        rows = inds_vector.repeat(self.num_of_active_words).to(self.device)
+        inds_vector = torch.arange(0, N, dtype=torch.int32, device=self.device)
+        rows = inds_vector.repeat(self.num_of_active_words)
         for m in range(self.num_of_ferns):
             start_ind = m * self.num_of_active_words
             end_ind = (m+1) * self.num_of_active_words
@@ -716,8 +716,7 @@ class FernSparseTable_tabular(nn.Module):
             cols = torch.flatten(IT_for_fern.permute(1,0))
             inds = torch.cat([rows.unsqueeze(0),cols.unsqueeze(0)], dim = 0)
             vals = torch.flatten(AT_for_fern.permute(1,0))
-
-            Votes = torch.sparse_coo_tensor(inds, vals, [N, self.K_pow_2]).to(self.device)
+            Votes = torch.sparse_coo_tensor(inds, vals, [N, self.K_pow_2], device=self.device)
             sparse_vote = torch.sparse.mm(Votes, self.weights[m])
             output = torch.add(output, sparse_vote)
         output = output + self.bias
@@ -737,7 +736,7 @@ class FernSparseTable_tabular(nn.Module):
         num_of_bit_functions = T.size()[1]
 
         if num_of_examples < self.indices_help_tensor.shape[0]:
-            indices_help_tensor = torch.arange(num_of_bit_functions-1,-1,-1).unsqueeze(0).repeat(num_of_examples, 1).to(self.device)
+            indices_help_tensor = torch.arange(num_of_bit_functions-1,-1,-1, device=self.device).unsqueeze(0).repeat(num_of_examples, 1)
             constant_inds = torch.from_numpy(self.create_constant_inds(num_of_examples)).to(self.device)
             tensor_bit_pattern = self.create_truth_table(num_of_examples)
         else:
@@ -747,9 +746,9 @@ class FernSparseTable_tabular(nn.Module):
 
         # TB = torch._cast_Int(torch.round(T))
         TB = torch._cast_Int(torch.where(T >= 0.5, torch.ones_like(T), torch.zeros_like(T)))
-        WB = torch.zeros(num_of_examples, dtype=torch.int32).to(self.device)
+        WB = torch.zeros(num_of_examples, dtype=torch.int32, device=self.device)
 
-        bit_split_probs_tensor = torch.ones(num_of_examples, dtype=torch.int32).to(self.device)
+        bit_split_probs_tensor = torch.ones(num_of_examples, dtype=torch.int32, device=self.device)
         T_copy = T.clone()
         # this is a bug - don't multiply by 1-T all the time
         T_copy = torch.where(T_copy < 0.5, 1-T_copy, T_copy)
@@ -773,10 +772,10 @@ class FernSparseTable_tabular(nn.Module):
         a = []
         m = []
 
-        ABI = torch.zeros(num_of_examples, self.LP).to(self.device)
-        ABA = torch.zeros(num_of_examples, self.LP).to(self.device)
+        ABI = torch.zeros(num_of_examples, self.LP, device=self.device)
+        ABA = torch.zeros(num_of_examples, self.LP, device=self.device)
 
-        help_mat = torch.zeros_like(T).to(self.device)
+        help_mat = torch.zeros_like(T, device=self.device)
         if self.prune_type == 1:
             BA = T.clone()
             for j in range(self.LP):
@@ -808,7 +807,7 @@ class FernSparseTable_tabular(nn.Module):
                 ABA[:, j] = m[j]
 
         # Create the output tensor AT containing the word activations for all (images, locations)
-        AT = torch.ones(num_of_examples, self.num_of_active_words).to(self.device)
+        AT = torch.ones(num_of_examples, self.num_of_active_words, device=self.device)
 
         for j in range(self.LP):
             ABA_slice = ABA[:, j]
@@ -824,18 +823,18 @@ class FernSparseTable_tabular(nn.Module):
         AT = torch.mul(AT, bit_split_probs_tensor)
 
 
-        ones_matrix = torch.ones(num_of_examples, dtype=torch.int32).to(self.device)
+        ones_matrix = torch.ones(num_of_examples, dtype=torch.int32, device=self.device)
 
         # Create the output tensor IT containing the indices of active words for all (images, locations)
         for j in range(self.LP):
-            ABI_slice = torch._cast_Int((ABI[:, j].to(self.device)))
+            ABI_slice = torch._cast_Int((ABI[:, j]))
             ABI_slice_temp = ABI_slice
 
             bit_on_mask = ones_matrix.__lshift__(ABI_slice_temp)
             bit_on_mask = bit_on_mask.unsqueeze(1).repeat([1, self.num_of_active_words])
 
             bit_on_words = IT | bit_on_mask
-            bit_off_mask = bit_on_mask.__xor__(torch.tensor([(2**self.num_of_bit_functions)-1]).to(self.device))
+            bit_off_mask = bit_on_mask.__xor__(torch.tensor([(2**self.num_of_bit_functions)-1], device=self.device))
             bit_off_words = IT & bit_off_mask
 
             IT = torch.where(tensor_bit_pattern[j], bit_on_words, bit_off_words)
