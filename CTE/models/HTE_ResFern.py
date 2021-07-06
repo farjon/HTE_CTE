@@ -48,7 +48,6 @@ class HTE(nn.Module):
 
 
     def forward(self, x):
-
         for i in range(self.number_of_layers):
             residual_conn = x
             x = self.word_calc_layers[i](x)

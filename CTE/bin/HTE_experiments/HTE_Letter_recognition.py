@@ -30,7 +30,7 @@ def Train_Letters(args, train_loader, test_loader, device):
         layer_d_in = D_in[i]
         args.Fern_layer.append({'K': K, 'M': M, 'num_of_features': layer_d_in})
         layer_d_out = D_out if (i == args.num_of_layers-1) else D_in[i+1]
-        args.ST_layer.append({'Num_of_active_words': 2**(K-1), 'D_out': layer_d_out})
+        args.ST_layer.append({'Num_of_active_words': 2**(K), 'D_out': layer_d_out})
 
     # model parameters
     args.prune_type = 1

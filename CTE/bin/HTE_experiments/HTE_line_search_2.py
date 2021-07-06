@@ -15,8 +15,8 @@ from CTE.utils.datasets.create_letters_dataset import main as create_letters_dat
 def line_search():
     # search parameters
     num_of_ferns = [20, 50, 70, 100, 150, 200, 300]
-    number_of_BF = [8, 8, 8, 8, 8, 8, 8]
-    num_of_layers = 3
+    number_of_BF = [7]*len(num_of_ferns)
+    num_of_layers = 2
 
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
@@ -33,31 +33,32 @@ def line_search():
 
     # optimization Parameters
     args.num_of_epochs = 50
-    args.batch_size = 400
-    args.word_calc_learning_rate = 0.01
+    args.batch_size = 250
+    args.word_calc_learning_rate = 0.001
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
     args.batch_norm = True
+    args.Rho_end_value = 0.3
 
     # create data-loaders
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'LETTER')
     args.datapath = os.path.join(args.datadir, 'split_data')
     train_path, test_path = create_letters_dataset(args)
 
-    params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 0}
+    params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 4}
     training_set = Letter_dataset.Letters(train_path)
     train_loader = torch.utils.data.DataLoader(training_set, **params)
     testing_set = Letter_dataset.Letters(test_path, train_loader.dataset.mean, train_loader.dataset.std)
     test_loader = torch.utils.data.DataLoader(testing_set, **params)
 
-    args.debug = False # debugging the network using a pre-defiend ferns and tables
+    args.debug = False # debugging the network using a pre-defined ferns and tables
     args.visu_progress = True # visualizing training graphs
 
     for i in range(len(num_of_ferns)):
 
-        args.experiment_number = "line_search_Fern_" + str(num_of_layers) + "_layer_" + str(i)
+        args.experiment_number = "line_search_Fern_more_active_words_2_" + str(num_of_layers) + "_layer_" + str(i)
         args.num_of_ferns = num_of_ferns[i]
         args.number_of_BF = number_of_BF[i]
         args.num_of_layers = num_of_layers

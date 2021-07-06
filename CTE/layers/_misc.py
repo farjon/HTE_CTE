@@ -703,19 +703,19 @@ class FernSparseTable_tabular(nn.Module):
         IT = torch._cast_Int(IT)
         output = torch.zeros([N, self.d_out], device=self.device)
         # debug - check the number of average active words
-        # AT_bin = AT > 0.1
-        # print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
+        AT_bin = AT > 0.05
+        print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
 
         inds_vector = torch.arange(0, N, dtype=torch.int32, device=self.device)
-        rows = inds_vector.repeat(self.num_of_active_words)
+        rows = inds_vector.repeat(self.num_of_active_words) # [0,0,0,...,1,1,1,...,N,N,N]
         for m in range(self.num_of_ferns):
             start_ind = m * self.num_of_active_words
             end_ind = (m+1) * self.num_of_active_words
-            IT_for_fern = IT[:, start_ind : end_ind]
-            AT_for_fern = AT[:, start_ind : end_ind]
-            cols = torch.flatten(IT_for_fern.permute(1,0))
-            inds = torch.cat([rows.unsqueeze(0),cols.unsqueeze(0)], dim = 0)
-            vals = torch.flatten(AT_for_fern.permute(1,0))
+            IT_for_fern = IT[:, start_ind : end_ind] # [N, numOFActive]
+            AT_for_fern = AT[:, start_ind : end_ind] # [N, numOFActive]
+            cols = torch.flatten(IT_for_fern.permute(1,0)) # [numOfActive * N, 1]
+            inds = torch.cat([rows.unsqueeze(0),cols.unsqueeze(0)], dim = 0) # [numOfActive * N, 2]
+            vals = torch.flatten(AT_for_fern.permute(1,0)) # [numOfActive * N, 1]
             Votes = torch.sparse_coo_tensor(inds, vals, [N, self.K_pow_2], device=self.device)
             sparse_vote = torch.sparse.mm(Votes, self.weights[m])
             output = torch.add(output, sparse_vote)
@@ -854,13 +854,96 @@ class FernSparseTable_tabular(nn.Module):
     def create_truth_table(self, N):
         # Create ‘truth table’ binary mask tensors
         tensor_bit_pattern = []
-        const_2_tensor = torch.tensor(2, dtype=torch.int32).to(self.device)
+        const_2_tensor = torch.tensor(2, dtype=torch.int32, device=self.device)
         for j in range(self.LP):
             replicate = const_2_tensor.pow(j)
 
-            zeros_and_ones = torch.cat([torch.zeros(replicate, dtype=torch.int32).to(self.device), torch.ones(replicate, dtype=torch.int32).to(self.device)])
+            zeros_and_ones = torch.cat([torch.zeros(replicate, dtype=torch.int32, device=self.device), torch.ones(replicate, dtype=torch.int32, device=self.device)])
             bit_pattern = zeros_and_ones.repeat(int(self.num_of_active_words / (2 * replicate)))
             bit_pattern_repeat = bit_pattern.repeat([N, 1])
-            tensor_bit_pattern.append(bit_pattern_repeat.bool().to(self.device))
+            tensor_bit_pattern.append(bit_pattern_repeat.bool())
 
         return tensor_bit_pattern
+
+class FernBitWord_tabular_sample_features(nn.Module):
+
+    def __init__(self, M, K, d_in, args, device):
+        '''
+        Constructor for the Fern bit word encoder for tabular data.
+        This layer includes the following learnable parameters:
+            - alpha - the given weight for each of the features
+            - th - the threshold for each of the bit function in each fern
+        the length of each of these parameter lists is hence number_of_ferns*number_of_bit_functions
+
+        :param num_of_ferns: number of ferns to used in the layer
+        :param K: number of bit functions in each fern
+        :param d_in: the number of features in the input tensor
+        '''
+        super(FernBitWord_tabular_sample_features, self).__init__()
+        self.num_of_ferns = M
+        self.num_of_bit_functions = K
+        alp = torch.rand([M, K, d_in], device=device)
+        if d_in > 10:
+            f = 10
+            index_tensor = (torch.from_numpy(np.random.choice(d_in, [M, K, f])).long()).to(device)
+            input_tensor = torch.ones_like(alp, device=device)*(-100)
+            input_tensor.scatter_(2, index_tensor, alp)
+            alp = input_tensor.clone()
+
+        self.alpha = nn.Parameter(alp)
+        self.th = nn.Parameter(torch.zeros([M, K], device=device))
+        self.ambiguity_thresholds = init_ambiguity_thresholds(self.num_of_ferns, self.num_of_bit_functions, device)
+        self.anneal_state_params = init_anneal_state_tabular(args)
+        self.args = args
+        self.device = device
+        self.alpha_after_softmax = np.zeros(self.alpha.shape) # torch.zeros_like(self.alpha)
+
+    def forward(self, T):
+        '''
+        applied on the input tensor, this layer slices the tensor according to the number of bit function and the number of ferns
+        and calculates the bit function (for now only comparison between 2 pixels and a threshold is implemented) for each of the
+        ferns.
+        :param T: a 2D tensor of size (N, D_in) where N is the number of examples,
+            D is the the number of features
+        :return: output: a 3D tensor of size (N, M, K) where M is the number_of_ferns, K is the number_of_bit_functions.
+            This tensor hold the bit function values for each cell in the input.
+        '''
+        Bits = torch.zeros([T.size(0), self.num_of_ferns, self.num_of_bit_functions], device=self.device)
+        bit_functions_values = []
+        for m in range(self.num_of_ferns):
+            current_alpha = self.alpha[m]
+            current_alpha_with_tempature = torch.mul(current_alpha, self.anneal_state_params['tempature'])
+            softmax_alpha = torch.nn.functional.softmax(current_alpha_with_tempature, dim=1)
+            current_th = self.th[m]
+            Bits[:, m, :], bit_values = self.__Bit(T, softmax_alpha, current_th, self.ambiguity_thresholds[m])
+            bit_functions_values.append(bit_values)
+            self.alpha_after_softmax[m] = softmax_alpha.detach().cpu().numpy()   #Aharon: this line creates the problem  - the mysterious bug. Now fixed
+        if self.anneal_state_params['count_till_update'] == self.anneal_state_params['batch_till_update']:
+            # save the bit function values for the annealing mechanism
+            self.bit_functions_values = bit_functions_values   # This also may be problematic: Detach it.
+
+        return Bits
+
+    def __Bit(self, T, alpha, thresh, ambiguity_thresholds):
+        '''
+        compute a complete ferns with K bit functions for all examples
+        :param T: a matrix of size (N, D_in) where N is the number of examples,
+            and D_in is the number of features
+        :param alpha: a matric of size (num_of_bit_functions, D_in) containing the weights for each cell of each of the bit functions in a given fern
+        :param thresh: a matric of size (num_of_bit_functions, D_in) containing the threshold of bit function
+        :param ambiguity_thresholds: vector of size (K,2) holding the ambiguity thresholds (pos, neg)
+        :return: B: a matrix of size (N, K) containing the bit function value (in the range [0,1]) for each exmaple
+        :return: b: a 3D tensor of size (N, K) containing the bit function value before bounding it, for each example
+        '''
+        temp = torch.mm(T, torch.transpose(alpha,1,0))
+        temp[torch.abs(temp) < 1e-5] = 0
+        b = torch.sub(temp, thresh)
+        ambiguity_param_pos = ambiguity_thresholds[0]
+        ambiguity_param_neg = ambiguity_thresholds[1]
+
+        # linear sigmoid function
+        unclipped_B = torch.div(torch.add(b, (-1)*ambiguity_param_neg),
+                                (-1)*ambiguity_param_neg + ambiguity_param_pos + 10e-30) # we add 10e-30 to
+        B = torch.clamp(unclipped_B, 0 , 1)
+        # B is bounded between [0,1], b is the real value of the bit function
+        return B, b

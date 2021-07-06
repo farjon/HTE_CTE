@@ -42,15 +42,16 @@ class HTE(nn.Module):
 
 
     def forward(self, x):
-
+        input_conn = x.clone()
         for i in range(self.number_of_layers):
-            residual_conn = x
             x = self.word_calc_layers[i](x)
             if self.word_calc_layers[i].anneal_state_params['count_till_update'] == self.word_calc_layers[i].anneal_state_params['batch_till_update']:
                 self.save_fern_bit_values[i] = self.save_fern_values(self.word_calc_layers[i].bit_functions_values)
             x = self.voting_table_layers[i](x)
+            if self.args.batch_norm and i < self.number_of_layers-1:
+                x = self.batch_norm_layers[i](x)
             if i < self.number_of_layers-1:
-                x = torch.cat(x, residual_conn, dim=1)
+                x += input_conn
         return x
 
     def save_fern_values(self, bit_functions_values_list):
