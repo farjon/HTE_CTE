@@ -2,10 +2,10 @@ import numpy as np
 import argparse
 import os
 from GetEnvVar import GetEnvVar
-from CTE.bin.HTE_experiments.HTE_yeast import Train_Yeast
+from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters
 import torch
-from CTE.utils.datasets import Yeast_dataset
-from CTE.utils.datasets.create_yeast_dataset import main as create_dataset
+from CTE.utils.datasets import Letter_dataset
+from CTE.utils.datasets.create_letters_dataset import main as create_dataset
 
 def line_search():
     # search parameters
@@ -46,7 +46,7 @@ def line_search():
     params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 4}
     training_set = Letter_dataset.Letters(train_path)
     train_loader = torch.utils.data.DataLoader(training_set, **params)
-    testing_set = Yeast_dataset.Yeast(test_path, train_loader.dataset.mean, train_loader.dataset.std)
+    testing_set = Letter_dataset.Letters(test_path, train_loader.dataset.mean, train_loader.dataset.std)
     test_loader = torch.utils.data.DataLoader(testing_set, **params)
 
     args.debug = False # debugging the network using a pre-defined ferns and tables
@@ -64,7 +64,7 @@ def line_search():
         args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
         os.makedirs(args.save_path, exist_ok=True)
 
-        Train_Yeast(args, train_loader, test_loader, device)
+        Train_Letters(args, train_loader, test_loader, device)
 
 if __name__ == '__main__':
     line_search()
