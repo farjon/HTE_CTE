@@ -2,15 +2,10 @@ import numpy as np
 import argparse
 import os
 from GetEnvVar import GetEnvVar
-from CTE.models.HTE_ResFern import HTE
-from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters
+from CTE.bin.HTE_experiments.HTE_yeast import Train_Yeast
 import torch
-import torch.nn as nn
-from CTE.utils.datasets import Letter_dataset
-from torch import optim
-from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
-from CTE.bin.HTE_experiments.training_functions import train_loop
-from CTE.utils.datasets.create_letters_dataset import main as create_letters_dataset
+from CTE.utils.datasets import Yeast_dataset
+from CTE.utils.datasets.create_yeast_dataset import main as create_dataset
 
 def line_search():
     # search parameters
@@ -18,13 +13,14 @@ def line_search():
     number_of_BF = [7]*len(num_of_ferns)
     num_of_layers = 2
 
+
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
 
     # setting the device and verifying reproducibility
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(0)
+        torch.cuda.set_device(1)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -43,14 +39,14 @@ def line_search():
     args.Rho_end_value = 0.3
 
     # create data-loaders
-    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'LETTER')
+    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'YEAST', 'yeast_zip', 'data')
     args.datapath = os.path.join(args.datadir, 'split_data')
-    train_path, test_path = create_letters_dataset(args)
+    train_path, test_path = create_dataset(args)
 
     params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 4}
     training_set = Letter_dataset.Letters(train_path)
     train_loader = torch.utils.data.DataLoader(training_set, **params)
-    testing_set = Letter_dataset.Letters(test_path, train_loader.dataset.mean, train_loader.dataset.std)
+    testing_set = Yeast_dataset.Yeast(test_path, train_loader.dataset.mean, train_loader.dataset.std)
     test_loader = torch.utils.data.DataLoader(testing_set, **params)
 
     args.debug = False # debugging the network using a pre-defined ferns and tables
@@ -63,12 +59,12 @@ def line_search():
         args.number_of_BF = number_of_BF[i]
         args.num_of_layers = num_of_layers
         # paths to save models
-        experiment_name = 'HTE-Letter-Recognition-resnet'
+        experiment_name = 'HTE-Yeast-resnet'
         experiment_number = args.experiment_number
         args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
         os.makedirs(args.save_path, exist_ok=True)
 
-        Train_Letters(args, train_loader, test_loader, device)
+        Train_Yeast(args, train_loader, test_loader, device)
 
 if __name__ == '__main__':
     line_search()
