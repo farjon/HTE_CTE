@@ -5,9 +5,6 @@ from GetEnvVar import GetEnvVar
 import matplotlib.pyplot as plt
 from itertools import count
 
-def load_checkpoint_model():
-    pass
-
 def train_loop(args, train_loader, model, optimizer, criterion, device, save_anneal_func, load_model_func):
     # check if there is a checkpoint
     if os.path.isfile(args.checkpoint_model_path):
