@@ -12,7 +12,9 @@ class HTE(nn.Module):
 
         self.word_calc_layers = nn.ModuleList()
         self.voting_table_layers = nn.ModuleList()
-        for i in range(args.number_of_layers):
+        self.batch_norm_layers = nn.ModuleList()
+
+        for i in range(args.num_of_layers):
             self.word_calc_layers.append(
                 FernBitWord_tabular(
                     args.Fern_layer[i]['M'],
@@ -35,23 +37,32 @@ class HTE(nn.Module):
                     args
                 )
             )
+            if args.batch_norm:
+                self.batch_norm_layers.append(
+                    nn.BatchNorm1d(args.ST_layer[i]['D_out'])
+                )
+        if args.loss == 'uncertinty_yarin_gal':
+            self.reg_layer = nn.Linear(args.ST_layer[-1]['D_out'], 2, False)
+        else:
+            self.reg_layer = nn.Linear(args.ST_layer[-1]['D_out'], 1, True)
 
-        self.number_of_layers = args.number_of_layers
+        self.number_of_layers = args.num_of_layers
         self.args = args
-        self.save_fern_bit_values = [None] * args.number_of_layers
+        self.save_fern_bit_values = [None] * args.num_of_layers
 
 
     def forward(self, x):
-        input_conn = x.clone()
         for i in range(self.number_of_layers):
+            residual_conn = x
             x = self.word_calc_layers[i](x)
             if self.word_calc_layers[i].anneal_state_params['count_till_update'] == self.word_calc_layers[i].anneal_state_params['batch_till_update']:
                 self.save_fern_bit_values[i] = self.save_fern_values(self.word_calc_layers[i].bit_functions_values)
             x = self.voting_table_layers[i](x)
             if self.args.batch_norm and i < self.number_of_layers-1:
                 x = self.batch_norm_layers[i](x)
-            if i < self.number_of_layers-1:
-                x += input_conn
+            if i < self.number_of_layers:
+                x += residual_conn
+        x = self.reg_layer(x)
         return x
 
     def save_fern_values(self, bit_functions_values_list):

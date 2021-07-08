@@ -1,5 +1,4 @@
 import os
-from CTE.models.HTE_ResFern import HTE
 import torch
 import torch.nn as nn
 from torch import optim
@@ -11,8 +10,14 @@ from datetime import datetime
 def Train_Letters(args, train_loader, test_loader, device):
 
     # Letter recognition dataset has 16 features and 26 classes
-    D_in = [16] * args.num_of_layers
-    D_out = 26
+    features_in = 16
+    final_classes = 26
+    D_in = [features_in]
+    D_out = []
+    for i in range(args.num_of_layers - 1):
+        D_out.append(50)
+        D_in.append(D_out[0]+D_in[0])
+    D_out.append(final_classes)
 
     # Decide on the ferns parameters and sparse table parameters
     # Fern parameters should include:
@@ -29,7 +34,7 @@ def Train_Letters(args, train_loader, test_loader, device):
     for i in range(args.num_of_layers):
         layer_d_in = D_in[i]
         args.Fern_layer.append({'K': K, 'M': M, 'num_of_features': layer_d_in})
-        layer_d_out = D_out if (i == args.num_of_layers-1) else D_in[i+1]
+        layer_d_out = D_out[i]
         args.ST_layer.append({'Num_of_active_words': 2**(K), 'D_out': layer_d_out})
 
     # model parameters
@@ -40,6 +45,11 @@ def Train_Letters(args, train_loader, test_loader, device):
         criterion = nn.CrossEntropyLoss(reduction='sum')
 
     args.number_of_batches = train_loader.dataset.examples.shape[0] / args.batch_size
+    if args.res_connection == 1:
+        from CTE.models.HTE_ResFern import HTE
+    elif args.res_connection == 2:
+        from CTE.models.HTE_ResFern_concate import HTE
+
     model = HTE(args, args.input_size, device)
 
     # set learning rate to model parameters, we set different learning rate to W and V
