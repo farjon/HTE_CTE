@@ -55,6 +55,11 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
         }, args.checkpoint_model_path)
         save_anneal_func(model, args.checkpoint_paths_anneal_params)
 
+        if epoch >= args.end_rho_at_epoch:
+            print('do validation')
+            # accuracy = eval_loop(test_loader, final_model, device)
+
+
 
         if args.visu_progress:
             loss_for_epoch.append(avg_loss)
