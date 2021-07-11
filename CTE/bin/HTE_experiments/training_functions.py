@@ -4,8 +4,9 @@ import torch
 from GetEnvVar import GetEnvVar
 import matplotlib.pyplot as plt
 from itertools import count
+from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 
-def train_loop(args, train_loader, model, optimizer, criterion, device, save_anneal_func, load_model_func):
+def train_loop(args, train_loader, model, optimizer, criterion, device, save_anneal_func, load_model_func, val_loader=None):
     # check if there is a checkpoint
     if os.path.isfile(args.checkpoint_model_path):
         checkpoint = torch.load(args.checkpoint_model_path)
@@ -23,6 +24,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
     loss_for_epoch = []
     index = count()
     number_of_batchs = args.number_of_batches
+    best_accuracy = 0
     for epoch in range(epoch_start, args.num_of_epochs):
         running_loss_graph = 0.0
         batch_index = 0
@@ -55,11 +57,18 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
         }, args.checkpoint_model_path)
         save_anneal_func(model, args.checkpoint_paths_anneal_params)
 
-        if epoch >= args.end_rho_at_epoch:
-            print('do validation')
-            # accuracy = eval_loop(test_loader, final_model, device)
-
-
+        if val_loader is not None:
+            if epoch >= args.end_rho_at_epoch:
+                accuracy = eval_loop(val_loader, model, device)
+                if accuracy >= best_accuracy:
+                    best_accuracy = accuracy
+                    torch.save({
+                        'epoch': epoch,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict()
+                    }, args.val_model_path)
+                    save_anneal_func(model, args.val_paths_anneal_params)
+                    model.train(True)
 
         if args.visu_progress:
             loss_for_epoch.append(avg_loss)

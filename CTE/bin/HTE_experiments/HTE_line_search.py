@@ -9,9 +9,9 @@ def line_search():
     args = parser.parse_args()
 
     # setting the device and verifying reproducibility
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(1)
+        torch.cuda.set_device(0)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -29,8 +29,8 @@ def line_search():
     num_of_layers = 2
 
     # optimization Parameters
-    args.num_of_epochs = 50
-    args.batch_size = 250
+    args.num_of_epochs = 80
+    args.batch_size = 400
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
@@ -53,16 +53,22 @@ def line_search():
         from CTE.utils.datasets.Letter_dataset import Letters as DataSet
         from CTE.utils.datasets.create_letters_dataset import main as create_dataset
         from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters as Train_model
+        train_path, val_path, test_path = create_dataset(args)
     elif dataset_name == 'ADULT':
         from CTE.utils.datasets.Adult_dataset import Adult_1_hot as DataSet
         from CTE.utils.datasets.create_adult_dataset import main as create_dataset
         from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters as Train_model
+        train_path, test_path = create_dataset(args)
 
-    train_path, test_path = create_dataset(args)
+
     training_set = DataSet(train_path)
     train_loader = torch.utils.data.DataLoader(training_set, **dataset_params)
     testing_set = DataSet(test_path, train_loader.dataset.mean, train_loader.dataset.std)
     test_loader = torch.utils.data.DataLoader(testing_set, **dataset_params)
+
+    if 'val_path' in locals():
+        validation_set = DataSet(val_path, train_loader.dataset.mean, train_loader.dataset.std)
+        val_loader = torch.utils.data.DataLoader(validation_set, **dataset_params)
 
     args.debug = False # debugging the network using a pre-defined ferns and tables
     args.visu_progress = True # visualizing training graphs
@@ -78,8 +84,10 @@ def line_search():
         # paths to save models
         args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', folder_to_save, args.experiment_name)
         os.makedirs(args.save_path, exist_ok=True)
-
-        Train_model(args, train_loader, test_loader, device)
+        if 'val_loader' in locals():
+            Train_model(args, train_loader, test_loader, device, val_loader)
+        else:
+            Train_model(args, train_loader, test_loader, device)
 
 if __name__ == '__main__':
     line_search()

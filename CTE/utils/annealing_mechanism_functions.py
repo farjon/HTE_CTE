@@ -214,7 +214,7 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
         anneal_state_params['count_till_update'] += 1
         anneal_state_params['prev_ambiguity_th_weight'] = 0.992
     else:
-        anneal_state_params['batch_till_update'] = 3
+        anneal_state_params['batch_till_update'] = 1
         anneal_state_params['count_till_update'] = 0
 
         number_of_ferns = len(bit_function_values)

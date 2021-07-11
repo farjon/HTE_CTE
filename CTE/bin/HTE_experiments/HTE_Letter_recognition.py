@@ -7,7 +7,7 @@ from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from datetime import datetime
 
-def Train_Letters(args, train_loader, test_loader, device):
+def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
 
     # Letter recognition dataset has 16 features and 26 classes
     features_in = 16
@@ -15,7 +15,7 @@ def Train_Letters(args, train_loader, test_loader, device):
     D_in = [features_in]
     D_out = []
     for i in range(args.num_of_layers - 1):
-        D_out.append(50)
+        D_out.append(40)
         D_in.append(D_out[0]+D_in[0])
     D_out.append(final_classes)
 
@@ -82,6 +82,19 @@ def Train_Letters(args, train_loader, test_loader, device):
         checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'anneal_params_'+str(i+1)+'.p'))
     args.checkpoint_paths_anneal_params = checkpoint_paths_anneal_params
 
+    # set path to save best model parameters and annealing parameters
+    if val_loader is not None:
+        val_anneal_params = []
+        args.val_folder_path = os.path.join(args.save_path, 'best_val_model')
+        os.makedirs(args.val_folder_path, exist_ok=True)
+        args.val_model_path = os.path.join(args.val_folder_path, 'best_model.pt')
+        for i in range(0, args.num_of_layers * 2, 2):
+            val_anneal_params.append(
+                os.path.join(args.val_folder_path, 'ambiguity_thresholds_layer_' + str(i) + '.p'))
+            val_anneal_params.append(
+                os.path.join(args.val_folder_path, 'anneal_params_' + str(i + 1) + '.p'))
+        args.val_paths_anneal_params = val_anneal_params
+
     def save_model_anneal_params(model, paths_to_load):
         for i in range(0, args.num_of_layers*2,2):
             path_to_AT = paths_to_load[i]
@@ -97,7 +110,7 @@ def Train_Letters(args, train_loader, test_loader, device):
             model.word_calc_layers[int(i/2)].anneal_state_params = AP
         return model
 
-    final_model = train_loop(args, train_loader, model, optimizer, criterion, device, save_model_anneal_params, load_model_anneal_params)
+    final_model = train_loop(args, train_loader, model, optimizer, criterion, device, save_model_anneal_params, load_model_anneal_params, val_loader)
 
     #save model and ambiguity_thresholds
     torch.save(final_model.state_dict(), os.path.join(args.save_path, 'final_model_parameters.pth'))
