@@ -25,6 +25,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
     index = count()
     number_of_batchs = args.number_of_batches
     best_accuracy = 0
+    best_epoch = 0
     for epoch in range(epoch_start, args.num_of_epochs):
         running_loss_graph = 0.0
         batch_index = 0
@@ -61,6 +62,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
             if epoch >= args.end_rho_at_epoch:
                 accuracy = eval_loop(val_loader, model, device)
                 if accuracy >= best_accuracy:
+                    best_epoch = epoch
                     best_accuracy = accuracy
                     torch.save({
                         'epoch': epoch,
@@ -83,5 +85,5 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
             else:
                 plt.savefig(os.path.join(args.checkpoint_folder_path, 'progress plot.png'))
             plt.cla()
-
+    print(f'best results is {best_accuracy} at epoch {best_epoch}')
     return model
