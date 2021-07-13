@@ -703,8 +703,8 @@ class FernSparseTable_tabular(nn.Module):
         IT = torch._cast_Int(IT)
         output = torch.zeros([N, self.d_out], device=self.device)
         # debug - check the number of average active words
-        AT_bin = AT > 0.005
-        print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
+        # AT_bin = AT > 0.005
+        # print('average number of active words is %i' %((AT_bin.sum()//self.args.batch_size)//M))
 
         inds_vector = torch.arange(0, N, dtype=torch.int32, device=self.device)
         rows = inds_vector.repeat(self.num_of_active_words) # [0,0,0,...,1,1,1,...,N,N,N]
