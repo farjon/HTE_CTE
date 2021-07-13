@@ -21,10 +21,10 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    experiment_number = 0
+    experiment_number = 10
 
     # search parameters
-    num_of_ferns = [20, 50, 70, 100, 150, 200, 300]
+    num_of_ferns = [50]
     number_of_BF = [7]*len(num_of_ferns)
     num_of_layers = 2
 
@@ -36,14 +36,14 @@ def line_search():
     args.LR_decay = 0.99
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
-    args.Rho_end_value = 0.3
-    args.end_rho_at_epoch = args.num_of_epochs - 10
+    args.Rho_end_value = 0.4
+    args.end_rho_at_epoch = args.num_of_epochs - 30
     args.batch_norm = True
     args.res_connection = 2 # 1 - resnet from input, size of d_out for l in [0, l-1] is d_in (summing input with layer's output)
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
 
     # create data-loaders
-    dataset_name = 'LETTER' # LETTER / ADULT / Helena / Iris
+    dataset_name = 'LETTER' # LETTER / ADULT / Helena
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', dataset_name)
     args.datapath = os.path.join(args.datadir, 'split_data')
 
@@ -76,7 +76,7 @@ def line_search():
     folder_to_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', dataset_name)
 
     for i in range(len(num_of_ferns)):
-
+        print(f'this is experiment number {experiment_number} now running the {i}th loop')
         args.experiment_name = 'exp ' + str(experiment_number) + " tuning " + tuning_parameter + ', ' + str(num_of_layers) + "_layers with " + str(num_of_ferns[i]) + ' ferns'
         args.num_of_ferns = num_of_ferns[i]
         args.number_of_BF = number_of_BF[i]
