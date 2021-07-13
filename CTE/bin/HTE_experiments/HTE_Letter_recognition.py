@@ -19,7 +19,7 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
             D_out.append(16)
             D_in.append(D_out[i])
         elif args.res_connection == 2:
-            D_out.append(40)
+            D_out.append(26)
             D_in.append(D_out[i]+D_in[0])
     D_out.append(final_classes)
 
@@ -125,15 +125,28 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
         final_paths_anneal_params.append(os.path.join(args.save_path, 'final_anneal_params_'+str(i+1)+'.p'))
     save_model_anneal_params(final_model, final_paths_anneal_params)
 
-    accuracy = eval_loop(test_loader, final_model, device)
-    print(accuracy)
+    final_accuracy = eval_loop(test_loader, final_model, device)
+    print(f'final model accuracy is {final_accuracy}')
 
     path_to_parameters_save = os.path.join(args.save_path, 'final_parameters_values.csv')
     path_to_hyper_parameters_save = os.path.join(args.save_path, 'final_hyper_parameters_values.csv')
     print_end_experiment_report(args, final_model, optimizer,
-                                (accuracy), test_loader.dataset.examples.shape[0],
+                                (final_accuracy), test_loader.dataset.examples.shape[0],
                                 path_to_parameters_save,
                                 path_to_hyper_parameters_save)
+
+
+    best_model_path = args.val_model_path
+    best_model_anneal_params = args.val_paths_anneal_params
+    best_model = final_model
+
+    best_model_params = torch.load(best_model_path)
+    best_model.load_state_dict(best_model_params['model_state_dict'])
+    optimizer.load_state_dict(best_model_params['optimizer_state_dict'])
+    load_model_anneal_params(best_model, best_model_anneal_params)
+
+    best_accuracy = eval_loop(test_loader, best_model, device)
+    print(f'best model accuracy is {best_accuracy}')
 
     dateTimeObj = datetime.now()
     timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")

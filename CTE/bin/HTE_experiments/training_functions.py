@@ -71,6 +71,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
                     }, args.val_model_path)
                     save_anneal_func(model, args.val_paths_anneal_params)
                     model.train(True)
+                    print(f'best accuracy is now {best_accuracy}')
 
         if args.visu_progress:
             loss_for_epoch.append(avg_loss)
@@ -85,5 +86,6 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
             else:
                 plt.savefig(os.path.join(args.checkpoint_folder_path, 'progress plot.png'))
             plt.cla()
-    print(f'best results is {best_accuracy} at epoch {best_epoch}')
+    if epoch > 0:
+        print(f'best results is {best_accuracy} at epoch {best_epoch}')
     return model
