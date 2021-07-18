@@ -1,83 +1,28 @@
-import numpy as np
-import argparse
 import os
-from GetEnvVar import GetEnvVar
-from CTE.models.HTE_model import HTE
 import torch
 import torch.nn as nn
-from CTE.utils.datasets import Adult_dataset
 from torch import optim
 from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
 from CTE.bin.HTE_experiments.training_functions import train_loop
-from CTE.utils.datasets.create_adult_dataset import main as create_adult_dataset
+from CTE.bin.HTE_experiments.evaluation_function import eval_loop
+from datetime import datetime
 
-def main():
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    if device.type == 'cuda':
-        torch.cuda.set_device(0)
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cudnn.benchmark = False
-    np.random.seed(10)
-    torch.manual_seed(0)
+def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
 
-    # create args struct for all parameters
-    parser = argparse.ArgumentParser(description="HTE model")
-    args = parser.parse_args()
+    # Letter recognition dataset has 16 features and 26 classes
+    features_in = 14
+    final_classes = 2
+    D_in = [features_in]
+    D_out = []
+    for i in range(args.num_of_layers - 1):
+        if args.res_connection == 1:
+            D_out.append(features_in)
+            D_in.append(D_out[i])
+        elif args.res_connection == 2:
+            D_out.append(40)
+            D_in.append(D_out[i]+D_in[0])
+    D_out.append(final_classes)
 
-    #debug_mode - also used to visualize and follow specific parameters. See ../CTE/utils/visualize_function.py
-    args.debug = True
-    args.visu_progress = True
-    args.draw_line = True
-
-    # path to save models
-    experiment_name = 'HTE-Adult_not_1_hot'
-    experiment_number = '0'
-    args.save_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name, experiment_number)
-    if not os.path.exists(args.save_path):
-        os.makedirs(args.save_path)
-    args.save_graph_path = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number)
-    args.path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number, 'parameters_final_values.csv')
-    args.path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number, 'hyper_parameters_values.csv')
-
-    # optimization Parameters
-    args.word_calc_learning_rate = 0.01
-    args.voting_table_learning_rate = 0.1
-
-    args.LR_decay = 0.9995
-    args.num_of_epochs = 50
-    args.batch_size = 500
-    args.optimizer = 'ADAM'
-    args.loss = 'categorical_crossentropy'
-
-    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE_Omri_Shira', 'ADULT')
-
-    args.datapath = os.path.join(args.datadir, 'split_data')
-    train_path, val_path, test_path = create_adult_dataset(args)
-
-    params = {'batch_size': args.batch_size,
-              'shuffle': True,
-              'num_workers': 0}
-
-    # create train,val,test data_loader
-    training_set = Adult_dataset.Adult_Not_1_hot(train_path)
-    train_loader = torch.utils.data.DataLoader(training_set, **params)
-
-    train_mean = train_loader.dataset.mean
-    train_std = train_loader.dataset.std
-
-    validation_set = Adult_dataset.Adult_Not_1_hot(val_path, train_mean, train_std)
-    validation_loader = torch.utils.data.DataLoader(validation_set, **params)
-
-    testing_set = Adult_dataset.Adult_Not_1_hot(test_path, train_mean, train_std)
-    test_loader = torch.utils.data.DataLoader(testing_set, **params)
-
-    # Letter recognition dataset has 16 features
-    D_in = 12
-    D_out = 2
-    args.input_size = [args.batch_size, D_in]
     # Decide on the ferns parameters and sparse table parameters
     # Fern parameters should include:
     #   K - number bit functions
@@ -85,46 +30,83 @@ def main():
     #   L - patch size
     # Sparse Table should include:
     #   D_out - number of features for next layer
-    args.Fern_layer = [
-        {'K': 7, 'M': 50, 'num_of_features': D_in}
-    ]
-    args.ST_layer = [
-        {'Num_of_active_words': 2**args.Fern_layer[0]['K'], 'D_out': D_out}
-    ]
+    K = args.number_of_BF
+    M = args.num_of_ferns
 
+    # define layers parameters
+    args.Fern_layer, args.ST_layer = [], []
+    for i in range(args.num_of_layers):
+        layer_d_in = D_in[i]
+        args.Fern_layer.append({'K': K, 'M': M, 'num_of_features': layer_d_in})
+        layer_d_out = D_out[i]
+        args.ST_layer.append({'Num_of_active_words': 2**(K), 'D_out': layer_d_out})
+
+    # model parameters
     args.prune_type = 1
-    args.number_of_layers = len(args.Fern_layer)
+    args.input_size = [args.batch_size, D_in]
 
     if args.loss == 'categorical_crossentropy':
         criterion = nn.CrossEntropyLoss(reduction='sum')
 
+    args.number_of_batches = train_loader.dataset.examples.shape[0] / args.batch_size
+    if args.res_connection == 1:
+        from CTE.models.HTE_ResFern import HTE
+    elif args.res_connection == 2:
+        from CTE.models.HTE_ResFern_concate import HTE
+
     model = HTE(args, args.input_size, device)
 
-    voting_table_LR_params_list = ['voting_table_layers.0.weights', 'voting_table.layers.0.bias']
+    # set learning rate to model parameters, we set different learning rate to W and V
+    voting_table_LR_params_list = []
+    for i in range(args.num_of_layers):
+        voting_table_LR_params_list.append('voting_table_layers.' + str(i) + '.weights')
+        voting_table_LR_params_list.append('voting_table.layers.' + str(i) + '.bias')
+
     voting_table_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] in voting_table_LR_params_list, model.named_parameters()))))
     word_calc_params = list(map(lambda x: x[1], list(filter(lambda kv: kv[0] not in voting_table_LR_params_list, model.named_parameters()))))
 
-    optimizer = optim.Adam([{'params': word_calc_params},
-                           {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
-                              lr=args.word_calc_learning_rate)
+    if args.optimizer == 'ADAM':
+        optimizer = optim.Adam([{'params': word_calc_params},
+                               {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
+                                  lr=args.word_calc_learning_rate)
+    elif args.optimizer == 'sgd':
+        optimizer = optim.SGD([{'params': word_calc_params},
+                               {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
+                                  lr=args.word_calc_learning_rate)
+    else:
+        assert 'no such optimizer, use only ADAM or sgd'
 
-    saving_path = os.path.join(args.save_path)
+    # set path to save annealing mechanism parameters for checkpoint recovery
+    checkpoint_paths_anneal_params = []
+    args.checkpoint_folder_path = os.path.join(args.save_path, 'check_point')
+    os.makedirs(args.checkpoint_folder_path, exist_ok=True)
+    args.checkpoint_model_path = os.path.join(args.save_path, 'check_point', 'checkpoint_model.pt')
+    for i in range(0,args.num_of_layers*2,2):
+        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'ambiguity_thresholds_layer_'+str(i)+'.p'))
+        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'anneal_params_'+str(i+1)+'.p'))
+    args.checkpoint_paths_anneal_params = checkpoint_paths_anneal_params
 
-    paths_to_save_anneal_params = []
-    for i in range(0,args.number_of_layers*2,2):
-        paths_to_save_anneal_params.append(os.path.join(saving_path, 'ambiguity_thresholds_layer_'+str(i)+'.p'))
-        paths_to_save_anneal_params.append(os.path.join(saving_path, 'anneal_params_'+str(i+1)+'.p'))
-    args.paths_to_save = paths_to_save_anneal_params
+    # set path to save best model parameters and annealing parameters
+    if val_loader is not None:
+        val_anneal_params = []
+        args.val_folder_path = os.path.join(args.save_path, 'best_val_model')
+        os.makedirs(args.val_folder_path, exist_ok=True)
+        args.val_model_path = os.path.join(args.val_folder_path, 'best_model.pt')
+        for i in range(0, args.num_of_layers * 2, 2):
+            val_anneal_params.append(
+                os.path.join(args.val_folder_path, 'ambiguity_thresholds_layer_' + str(i) + '.p'))
+            val_anneal_params.append(
+                os.path.join(args.val_folder_path, 'anneal_params_' + str(i + 1) + '.p'))
+        args.val_paths_anneal_params = val_anneal_params
 
-
-    def save_model_anneal_params(model, paths_to_save):
-        for i in range(0, args.number_of_layers*2,2):
-            path_to_AT = paths_to_save[i]
-            path_to_anneal_params = paths_to_save[i+1]
+    def save_model_anneal_params(model, paths_to_load):
+        for i in range(0, args.num_of_layers*2,2):
+            path_to_AT = paths_to_load[i]
+            path_to_anneal_params = paths_to_load[i+1]
             save_anneal_params(model.word_calc_layers[int(i/2)], path_to_AT, path_to_anneal_params)
 
     def load_model_anneal_params(model, paths_to_save):
-        for i in range(0, args.number_of_layers*2,2):
+        for i in range(0, args.num_of_layers*2,2):
             path_to_AT = paths_to_save[i]
             path_to_anneal_params = paths_to_save[i+1]
             AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params)
@@ -132,73 +114,41 @@ def main():
             model.word_calc_layers[int(i/2)].anneal_state_params = AP
         return model
 
-    if not os.path.exists(saving_path):
-        os.makedirs(saving_path)
+    final_model = train_loop(args, train_loader, model, optimizer, criterion, device, save_model_anneal_params, load_model_anneal_params, val_loader)
 
-    final_model = train_loop(args, train_loader, validation_loader, model, optimizer, criterion, device, saving_path, save_model_anneal_params)
+    #save model and ambiguity_thresholds
+    torch.save(final_model.state_dict(), os.path.join(args.save_path, 'final_model_parameters.pth'))
 
-    final_paths = []
-    for i in range(0,args.number_of_layers*2,2):
-        final_paths.append(os.path.join(saving_path, 'final_ambiguity_thresholds_layer_'+str(i)+'.p'))
-        final_paths.append(os.path.join(saving_path, 'final_anneal_params_'+str(i+1)+'.p'))
-    save_model_anneal_params(final_model, final_paths)
+    final_paths_anneal_params = []
+    for i in range(0,args.num_of_layers*2,2):
+        final_paths_anneal_params.append(os.path.join(args.save_path, 'final_ambiguity_thresholds_layer_'+str(i)+'.p'))
+        final_paths_anneal_params.append(os.path.join(args.save_path, 'final_anneal_params_'+str(i+1)+'.p'))
+    save_model_anneal_params(final_model, final_paths_anneal_params)
 
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for inputs_test, labels_test in test_loader:
-            inputs_test = inputs_test.to(device)
-            labels_test = labels_test.to(device)
-            outputs_test = final_model(inputs_test)
-            _, predicted = torch.max(outputs_test.data, 1)
-            total += labels_test.size(0)
-            correct += (predicted == labels_test).sum().item()
+    final_accuracy = eval_loop(test_loader, final_model, device)
+    print(f'final model accuracy is {final_accuracy}')
 
-            # print statistics
-        print('Accuracy of the network on the %d test examples: %.2f %%' % (
-        test_loader.dataset.examples.shape[0],
-        100 * correct / total))
-
-    path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number, 'final_parameters_final_values.csv')
-    path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number, 'final_hyper_parameters_values.csv')
+    path_to_parameters_save = os.path.join(args.save_path, 'final_parameters_values.csv')
+    path_to_hyper_parameters_save = os.path.join(args.save_path, 'final_hyper_parameters_values.csv')
     print_end_experiment_report(args, final_model, optimizer,
-                                (100 * correct / total), total,
+                                (final_accuracy), test_loader.dataset.examples.shape[0],
                                 path_to_parameters_save,
                                 path_to_hyper_parameters_save)
 
 
-    test_model = HTE(args, args.input_size, device)
-    test_model.load_state_dict(torch.load(os.path.join(saving_path, 'best_model_parameters.pth')), strict=False)
-    test_model = load_model_anneal_params(test_model, args.paths_to_save)
+    best_model_path = args.val_model_path
+    best_model_anneal_params = args.val_paths_anneal_params
+    best_model = final_model
 
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for inputs_test, labels_test in test_loader:
-            inputs_test = inputs_test.to(device)
-            labels_test = labels_test.to(device)
-            outputs_test = test_model(inputs_test)
-            _, predicted = torch.max(outputs_test.data, 1)
-            total += labels_test.size(0)
-            correct += (predicted == labels_test).sum().item()
+    best_model_params = torch.load(best_model_path)
+    best_model.load_state_dict(best_model_params['model_state_dict'])
+    optimizer.load_state_dict(best_model_params['optimizer_state_dict'])
+    load_model_anneal_params(best_model, best_model_anneal_params)
 
-            # print statistics
-        print('Accuracy of the network on the %d test examples: %.2f %%' % (
-        test_loader.dataset.examples.shape[0],
-        100 * correct / total))
+    best_accuracy = eval_loop(test_loader, best_model, device)
+    print(f'best model accuracy is {best_accuracy}')
 
-    print('Finished Training')
-    path_to_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number, 'best_parameters_final_values.csv')
-    path_to_hyper_parameters_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', experiment_name,
-                                        experiment_number, 'best_hyper_parameters_values.csv')
-    print_end_experiment_report(args, test_model, optimizer,
-                                (100 * correct / total), total,
-                                path_to_parameters_save,
-                                path_to_hyper_parameters_save)
-
-if __name__ == '__main__':
-    main()
-
+    dateTimeObj = datetime.now()
+    timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
+    print('Current Timestamp : ', timestampStr)
+    return

@@ -12,6 +12,7 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
         checkpoint = torch.load(args.checkpoint_model_path)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        epoch = checkpoint['epoch']
         epoch_start = checkpoint['epoch'] + 1
         load_model_func(model, args.checkpoint_paths_anneal_params)
     else:
