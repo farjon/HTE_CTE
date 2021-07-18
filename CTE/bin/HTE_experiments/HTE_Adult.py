@@ -109,7 +109,7 @@ def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
         for i in range(0, args.num_of_layers*2,2):
             path_to_AT = paths_to_save[i]
             path_to_anneal_params = paths_to_save[i+1]
-            AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params)
+            AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params, device)
             model.word_calc_layers[int(i/2)].ambiguity_thresholds = AT
             model.word_calc_layers[int(i/2)].anneal_state_params = AP
         return model

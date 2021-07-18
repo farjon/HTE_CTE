@@ -82,8 +82,8 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
     os.makedirs(args.checkpoint_folder_path, exist_ok=True)
     args.checkpoint_model_path = os.path.join(args.save_path, 'check_point', 'checkpoint_model.pt')
     for i in range(0,args.num_of_layers*2,2):
-        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'ambiguity_thresholds_layer_'+str(i)+'.p'))
-        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'anneal_params_'+str(i+1)+'.p'))
+        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'ambiguity_thresholds_layer_'+str(i)+'.pt'))
+        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'anneal_params_'+str(i+1)+'.ptt'))
     args.checkpoint_paths_anneal_params = checkpoint_paths_anneal_params
 
     # set path to save best model parameters and annealing parameters
@@ -109,7 +109,7 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
         for i in range(0, args.num_of_layers*2,2):
             path_to_AT = paths_to_save[i]
             path_to_anneal_params = paths_to_save[i+1]
-            AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params)
+            AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params, device)
             model.word_calc_layers[int(i/2)].ambiguity_thresholds = AT
             model.word_calc_layers[int(i/2)].anneal_state_params = AP
         return model

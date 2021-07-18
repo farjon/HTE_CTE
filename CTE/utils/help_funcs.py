@@ -1,6 +1,7 @@
 import pickle
 import csv
 import numpy as np
+import torch
 
 def save_anneal_params(layer, path_to_AT, path_to_anneal_params):
     '''
@@ -11,18 +12,13 @@ def save_anneal_params(layer, path_to_AT, path_to_anneal_params):
     '''
 
     layer_ambiguity_thresholds = layer.ambiguity_thresholds
-
-    with open(path_to_AT, 'wb') as fp:
-        pickle.dump(layer_ambiguity_thresholds, fp, protocol=pickle.HIGHEST_PROTOCOL)
-
+    torch.save(layer_ambiguity_thresholds, path_to_AT)
 
     layer_anneal_params = layer.anneal_state_params
-
-    with open(path_to_anneal_params, 'wb') as fp:
-        pickle.dump(layer_anneal_params, fp, protocol=pickle.HIGHEST_PROTOCOL)
+    torch.save(layer_anneal_params, path_to_anneal_params)
 
 
-def load_anneal_params(path_to_AT, path_to_anneal_params):
+def load_anneal_params(path_to_AT, path_to_anneal_params, device):
     '''
 
     :param path_to_AT:
@@ -30,12 +26,8 @@ def load_anneal_params(path_to_AT, path_to_anneal_params):
     :return:
     '''
 
-    with open(path_to_AT, 'rb') as fp:
-        layer_ambiguity_thresholds = pickle.load(fp)
-
-    with open(path_to_anneal_params, 'rb') as fp:
-        layer_anneal_params = pickle.load(fp)
-
+    layer_ambiguity_thresholds = torch.load(path_to_AT, map_location=device)
+    layer_anneal_params = torch.load(path_to_anneal_params, map_location=device)
 
     return layer_ambiguity_thresholds, layer_anneal_params
 

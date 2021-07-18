@@ -60,7 +60,8 @@ def train_loop(args, train_loader, model, optimizer, criterion, device, save_ann
         save_anneal_func(model, args.checkpoint_paths_anneal_params)
 
         if val_loader is not None:
-            if epoch >= args.end_rho_at_epoch:
+            # if epoch >= args.end_rho_at_epoch:
+            if epoch >= 0:
                 accuracy = eval_loop(val_loader, model, device)
                 if accuracy >= best_accuracy:
                     best_epoch = epoch

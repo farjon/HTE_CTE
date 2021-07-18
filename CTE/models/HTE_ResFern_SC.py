@@ -20,8 +20,8 @@ class HTE(nn.Module):
                     args.Fern_layer[i]['M'],
                     args.Fern_layer[i]['K'],
                     args.Fern_layer[i]['num_of_features'],
+                    device,
                     args,
-                    device
                 )
             )
             VT_input_shape = [input_shape[0], args.Fern_layer[i]['M'], args.Fern_layer[i]['K']]
@@ -34,7 +34,6 @@ class HTE(nn.Module):
                     VT_input_shape,
                     args.prune_type,
                     device,
-                    args
                 )
             )
             if args.batch_norm:
