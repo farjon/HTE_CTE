@@ -7,21 +7,19 @@ from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from datetime import datetime
 
-def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
+def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = None):
 
     # Letter recognition dataset has 16 features and 26 classes
-    features_in = 16
-    final_classes = 26
+    features_in = 8
     D_in = [features_in]
     D_out = []
-    for i in range(args.num_of_layers - 1):
+    for i in range(args.num_of_layers):
         if args.res_connection == 1:
             D_out.append(features_in)
             D_in.append(D_out[i])
         elif args.res_connection == 2:
             D_out.append(40)
             D_in.append(D_out[i]+D_in[0])
-    D_out.append(final_classes)
 
     # Decide on the ferns parameters and sparse table parameters
     # Fern parameters should include:
@@ -45,14 +43,11 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
     args.prune_type = 1
     args.input_size = [args.batch_size, D_in]
 
-    if args.loss == 'categorical_crossentropy':
-        criterion = nn.CrossEntropyLoss(reduction='sum')
+    if args.loss == 'MSE':
+        criterion = nn.MSELoss(reduction='mean')
 
     args.number_of_batches = train_loader.dataset.examples.shape[0] / args.batch_size
-    if args.res_connection == 1:
-        from CTE.models.HTE_ResFern import HTE
-    elif args.res_connection == 2:
-        from CTE.models.HTE_ResFern_concate import HTE
+    from CTE.models.HTE_reg import HTE
 
     model = HTE(args, args.input_size, device)
 

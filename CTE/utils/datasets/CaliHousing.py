@@ -1,8 +1,7 @@
 import torch
 import os
-import numpy as np
 
-class Adult(torch.utils.data.Dataset):
+class CaliHousing(torch.utils.data.Dataset):
     def __init__(self, path_to_folder, set ='train', device = 'cpu'):
 
         self.labels, self.examples = self.read_labels_and_ids(path_to_folder, set, device)
