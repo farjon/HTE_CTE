@@ -9,6 +9,7 @@ def line_search():
     args = parser.parse_args()
 
     # setting the device and verifying reproducibility
+    # device = torch.device('cpu')
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
         torch.cuda.set_device(0)
@@ -21,12 +22,12 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    experiment_number = 1
+    experiment_number = 1111
 
     # search parameters
     number_of_BF = [7]
-    num_of_ferns = [50]*len(number_of_BF)
-    num_of_layers = 2
+    num_of_ferns = [10]*len(number_of_BF)
+    num_of_layers = 1
 
     # optimization Parameters
     args.num_of_epochs = 80
