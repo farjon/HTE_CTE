@@ -15,6 +15,9 @@ def GetEnvVar(varName):
     elif env['computerName'] == 'SRV-AHARON1':  # Aharon CPU server
         env['storagePath'] = 'C:\\Users\\aharon\\Google Drive\\StoragePath\\'
 
+    elif env['computerName'] == 'SRV-AHARON4':  # Aharon GPU new server
+        env['storagePath'] = 'C:\\Users\\aharon\\Google Drive\\StoragePath\\'
+
     elif env['computerName'] == 'DESKTOP-OJFKHEN':  # Aharon's laptop
         env['storagePath'] = 'C:\\data\\StoragePath\\'
 
