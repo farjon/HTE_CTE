@@ -2,7 +2,7 @@ import os
 import torch
 import torch.nn as nn
 from torch import optim
-from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
+from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report, print_final_results
 from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from datetime import datetime
@@ -113,9 +113,23 @@ def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
             model.word_calc_layers[int(i/2)].ambiguity_thresholds = AT
             model.word_calc_layers[int(i/2)].anneal_state_params = AP
         return model
+    # add lr scheduler
+    if args.use_cosine_lr:
+        update_lr = 10 # T_max
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, update_lr, eta_min=1e-4)
+    else:
+        scheduler = None
 
-    final_model = train_loop(args, train_loader, model, optimizer, criterion, device, save_model_anneal_params, load_model_anneal_params, val_loader)
-
+    final_model = train_loop(model,
+                             train_loader,
+                             val_loader,
+                             criterion,
+                             optimizer,
+                             scheduler,
+                             args,
+                             save_model_anneal_params,
+                             load_model_anneal_params,
+                             )
     #save model and ambiguity_thresholds
     torch.save(final_model.state_dict(), os.path.join(args.save_path, 'final_model_parameters.pth'))
 
@@ -151,4 +165,7 @@ def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
     dateTimeObj = datetime.now()
     timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
     print('Current Timestamp : ', timestampStr)
+
+    #print_results_to_csv
+    print_final_results(args, best_accuracy, final_accuracy)
     return

@@ -19,7 +19,7 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
             D_out.append(features_in)
             D_in.append(D_out[i])
         elif args.res_connection == 2:
-            D_out.append(40)
+            D_out.append(100)
             D_in.append(D_out[i]+D_in[0])
     D_out.append(final_classes)
 
@@ -86,7 +86,7 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
         checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'anneal_params_'+str(i+1)+'.ptt'))
     args.checkpoint_paths_anneal_params = checkpoint_paths_anneal_params
 
-    # set path to save best model parameters and annealing parameters
+    # set paths to save best model parameters and annealing parameters
     if val_loader is not None:
         val_anneal_params = []
         args.val_folder_path = os.path.join(args.save_path, 'best_val_model')
@@ -98,13 +98,13 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
             val_anneal_params.append(
                 os.path.join(args.val_folder_path, 'anneal_params_' + str(i + 1) + '.p'))
         args.val_paths_anneal_params = val_anneal_params
-
+    # set a function to save anneal parameters
     def save_model_anneal_params(model, paths_to_load):
         for i in range(0, args.num_of_layers*2,2):
             path_to_AT = paths_to_load[i]
             path_to_anneal_params = paths_to_load[i+1]
             save_anneal_params(model.word_calc_layers[int(i/2)], path_to_AT, path_to_anneal_params)
-
+    # set a function to load anneal parameters
     def load_model_anneal_params(model, paths_to_save):
         for i in range(0, args.num_of_layers*2,2):
             path_to_AT = paths_to_save[i]
@@ -114,7 +114,23 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
             model.word_calc_layers[int(i/2)].anneal_state_params = AP
         return model
 
-    final_model = train_loop(args, train_loader, model, optimizer, criterion, device, save_model_anneal_params, load_model_anneal_params, val_loader)
+    # add lr scheduler
+    if args.use_cosine_lr:
+        update_lr = 10 # T_max
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, update_lr)
+    else:
+        scheduler = None
+
+    final_model = train_loop(model,
+                             train_loader,
+                             val_loader,
+                             criterion,
+                             optimizer,
+                             scheduler,
+                             args,
+                             save_model_anneal_params,
+                             load_model_anneal_params,
+                             )
 
     #save model and ambiguity_thresholds
     torch.save(final_model.state_dict(), os.path.join(args.save_path, 'final_model_parameters.pth'))

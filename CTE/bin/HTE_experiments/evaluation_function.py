@@ -1,4 +1,5 @@
 import torch
+from sklearn import metrics
 
 def eval_loop(test_loader, model, device):
     correct = 0
@@ -15,4 +16,6 @@ def eval_loop(test_loader, model, device):
             _, predicted = torch.max(outputs_test.data, 1)
             y_pred.extend(predicted.detach().cpu().numpy().tolist())
             correct += (predicted == labels_test).sum().item()
+    fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
+    # print(metrics.auc(fpr, tpr))
     return 100*(correct/test_examples)

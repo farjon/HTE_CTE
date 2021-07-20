@@ -674,13 +674,7 @@ class FernSparseTable_tabular(nn.Module):
         # Get indices and activations for most probable words
         for m in range(self.num_of_ferns):
             current_fern = B[:, m, :]
-            if (current_fern - current_fern.int()).sum() == 0:
-                activity = torch.zeros([N, self.num_of_active_words], device=self.device)
-                activity[:,0] = 1
-                words = torch.zeros([N, self.num_of_active_words], device=self.device)
-                words[:, 0] = torch.sum(torch.mul(current_fern, torch.pow(2, self.indices_help_tensor)), 1)
-            else:
-                words, activity = self.get_activations_and_indices(current_fern)
+            words, activity = self.get_activations_and_indices(current_fern)
             activations[:, m*self.num_of_active_words: (m+1)*self.num_of_active_words] = activity
             IT[:, m * self.num_of_active_words: (m + 1) * self.num_of_active_words] = words
 

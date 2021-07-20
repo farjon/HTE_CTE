@@ -69,5 +69,17 @@ def print_end_experiment_report(args, model, optimizer, test_score, testset_size
     csv_writer.writerow(['rho',  model.word_calc_layers._modules['0'].anneal_state_params['Rho']])
     csv_writer.writerow(['lr_W', optimizer.param_groups[0]['lr']])
     csv_writer.writerow(['lr_V', optimizer.param_groups[1]['lr']])
+    csv_writer.writerow(['batch_norm', args.batch_norm])
+    csv_writer.writerow(['cosine lr scheduler', args.use_cosine_lr])
     csv_file.close()
 
+def print_final_results(args, best_res, final_res):
+    exp_num = args.experiment_number
+    num_of_ferns = args.Fern_layer[0]['M']
+    number_of_BF = args.Fern_layer[0]['K']
+    D_out = args.ST_layer[0]['D_out']
+    num_of_layers = args.num_of_layers
+    dataset = args.dataset_name
+    row = f'{exp_num}, {num_of_ferns}, {number_of_BF}, {D_out}, {num_of_layers}, {dataset}, {best_res}, {final_res}'
+    with open(args.results_csv_file, "a") as fd:
+        fd.write(row)

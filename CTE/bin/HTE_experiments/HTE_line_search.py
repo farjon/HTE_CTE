@@ -19,24 +19,26 @@ def line_search():
     torch.manual_seed(0)
     args.device = device
 
+    args.results_csv_file = os.path.join(GetEnvVar('ExpResultsPath'), 'HTE', 'exp_results_master_file.csv')
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    experiment_number = 1111
+    args.experiment_number = 1
 
     # search parameters
     number_of_BF = [7]
-    num_of_ferns = [10]*len(number_of_BF)
-    num_of_layers = 1
+    num_of_ferns = [50]*len(number_of_BF)
+    num_of_layers = 3
 
     # optimization Parameters
-    args.num_of_epochs = 80
-    args.batch_size = 400
-    args.word_calc_learning_rate = 0.1
+    args.num_of_epochs = 5
+    args.batch_size = 256
+    args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
+    args.use_cosine_lr = True
     args.Rho_end_value = 0.3
     args.end_rho_at_epoch = args.num_of_epochs - 30
     args.batch_norm = True
@@ -44,18 +46,18 @@ def line_search():
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
 
     # create data-loaders
-    dataset_name = 'adult' # LETTER / adult / Helena
-    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', dataset_name)
+    args.dataset_name = 'adult' # LETTER / adult / Helena
+    args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
     dataset_params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 0}
 
-    if dataset_name == 'LETTER':
+    if args.dataset_name == 'LETTER':
         from CTE.utils.datasets.Letter_dataset import Letters as DataSet
         from CTE.utils.datasets.create_letters_dataset import main as create_dataset
         from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters as Train_model
         train_path, val_path, test_path = create_dataset(args)
-    elif dataset_name == 'adult':
+    elif args.dataset_name == 'adult':
         from CTE.utils.datasets.Adult_dataset import Adult as DataSet
         from CTE.bin.HTE_experiments.HTE_Adult import Train_Adult as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
@@ -81,11 +83,11 @@ def line_search():
     args.debug = False # debugging the network using a pre-defined ferns and tables
     args.visu_progress = True # visualizing training graphs
 
-    folder_to_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', dataset_name)
+    folder_to_save = os.path.join(GetEnvVar('ModelsPath'), 'Guy', 'HTE_pytorch', args.dataset_name)
 
     for i in range(len(num_of_ferns)):
-        print(f'this is experiment number {experiment_number} now running the {i}th loop')
-        args.experiment_name = 'exp ' + str(experiment_number) + " tuning " + tuning_parameter + ', ' + str(num_of_layers) + "_layers with " + str(num_of_ferns[i]) + ' ferns'
+        print(f'this is experiment number {args.experiment_number} now running the {i}th loop')
+        args.experiment_name = 'exp ' + str(args.experiment_number) + " tuning " + tuning_parameter + ', ' + str(num_of_layers) + "_layers with " + str(num_of_ferns[i]) + ' ferns'
         args.num_of_ferns = num_of_ferns[i]
         args.number_of_BF = number_of_BF[i]
         args.num_of_layers = num_of_layers
