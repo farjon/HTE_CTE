@@ -10,9 +10,9 @@ def line_search():
 
     # setting the device and verifying reproducibility
     # device = torch.device('cpu')
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(0)
+        torch.cuda.set_device(2)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -23,16 +23,16 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 1
+    args.experiment_number = 6
 
     # search parameters
-    number_of_BF = [7]
-    num_of_ferns = [50]*len(number_of_BF)
+    num_of_ferns = [50]
+    number_of_BF = [7]*len(num_of_ferns)
     num_of_layers = 3
 
     # optimization Parameters
-    args.num_of_epochs = 5
-    args.batch_size = 256
+    args.num_of_epochs = 80
+    args.batch_size = 512
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
@@ -46,7 +46,7 @@ def line_search():
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
 
     # create data-loaders
-    args.dataset_name = 'adult' # LETTER / adult / Helena
+    args.dataset_name = 'adult' # LETTER / adult / higgs_small
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
@@ -60,6 +60,10 @@ def line_search():
     elif args.dataset_name == 'adult':
         from CTE.utils.datasets.Adult_dataset import Adult as DataSet
         from CTE.bin.HTE_experiments.HTE_Adult import Train_Adult as Train_model
+        train_path, test_path, val_path = 'train', 'test', 'val'
+    elif args.dataset_name == 'higgs_small':
+        from CTE.utils.datasets.Higgs_Small_dataset import Higgs_Small as DataSet
+        from CTE.bin.HTE_experiments.HTE_Higgs import Train_Higgs as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
 
 
