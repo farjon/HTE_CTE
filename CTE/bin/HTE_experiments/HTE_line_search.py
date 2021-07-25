@@ -10,9 +10,9 @@ def line_search():
 
     # setting the device and verifying reproducibility
     # device = torch.device('cpu')
-    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(2)
+        torch.cuda.set_device(3)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -26,14 +26,13 @@ def line_search():
     args.experiment_number = 6
 
     # search parameters
-    num_of_ferns = [50]
-    number_of_BF = [7]*len(num_of_ferns)
+    num_of_ferns = [100]
+    number_of_BF = [8]*len(num_of_ferns)
     num_of_layers = 3
-
 
     # optimization Parameters
     args.num_of_epochs = 80
-    args.batch_size = 512
+    args.batch_size = 1024
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
@@ -66,7 +65,7 @@ def line_search():
     elif args.dataset_name == 'higgs_small':
         from CTE.utils.datasets.Higgs_Small_dataset import Higgs_Small as DataSet
         from CTE.bin.HTE_experiments.HTE_Higgs import Train_Higgs as Train_model
-		train_path, test_path, val_path = 'train', 'test', 'val'
+        train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'aloi':
         from CTE.utils.datasets.ALOI_dataset import ALOI as DataSet
         from CTE.bin.HTE_experiments.HTE_ALOI import Train_ALOI as Train_model
