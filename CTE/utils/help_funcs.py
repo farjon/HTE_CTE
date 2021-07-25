@@ -80,6 +80,6 @@ def print_final_results(args, best_res, final_res):
     D_out = args.ST_layer[0]['D_out']
     num_of_layers = args.num_of_layers
     dataset = args.dataset_name
-    row = f'{exp_num}, {num_of_ferns}, {number_of_BF}, {D_out}, {num_of_layers}, {dataset}, {best_res}, {final_res}'
-    with open(args.results_csv_file, "a") as fd:
+    row = f'{exp_num}, {dataset}, {num_of_ferns}, {number_of_BF}, {D_out}, {num_of_layers}, {best_res}, {final_res}'
+    with open(args.results_csv_file, "a", newline='') as fd:
         fd.write(row)

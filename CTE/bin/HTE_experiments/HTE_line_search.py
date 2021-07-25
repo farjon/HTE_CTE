@@ -23,22 +23,23 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 1
+    args.experiment_number = 5
 
     # search parameters
     number_of_BF = [7]
     num_of_ferns = [50]*len(number_of_BF)
-    num_of_layers = 3
+    num_of_layers = 2
 
     # optimization Parameters
-    args.num_of_epochs = 5
-    args.batch_size = 256
-    args.word_calc_learning_rate = 0.01
+    args.num_of_epochs = 80
+    args.batch_size = 512
+    args.word_calc_learning_rate = 0.1
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
-    args.use_cosine_lr = True
+    args.use_cosine_lr = False
+    args.weight_decay = 1e-2 # place 0 for no weight decay
     args.Rho_end_value = 0.3
     args.end_rho_at_epoch = args.num_of_epochs - 30
     args.batch_norm = True
@@ -46,7 +47,7 @@ def line_search():
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
 
     # create data-loaders
-    args.dataset_name = 'adult' # LETTER / adult / Helena
+    args.dataset_name = 'aloi' # LETTER / adult / higgs / aloi
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
@@ -60,6 +61,10 @@ def line_search():
     elif args.dataset_name == 'adult':
         from CTE.utils.datasets.Adult_dataset import Adult as DataSet
         from CTE.bin.HTE_experiments.HTE_Adult import Train_Adult as Train_model
+        train_path, test_path, val_path = 'train', 'test', 'val'
+    elif args.dataset_name == 'aloi':
+        from CTE.utils.datasets.ALOI_dataset import ALOI as DataSet
+        from CTE.bin.HTE_experiments.HTE_ALOI import Train_ALOI as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
 
 
