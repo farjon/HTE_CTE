@@ -30,6 +30,7 @@ def line_search():
     number_of_BF = [7]*len(num_of_ferns)
     num_of_layers = 3
 
+
     # optimization Parameters
     args.num_of_epochs = 80
     args.batch_size = 512
@@ -38,7 +39,8 @@ def line_search():
     args.LR_decay = 0.99
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
-    args.use_cosine_lr = True
+    args.use_cosine_lr = False
+    args.weight_decay = 1e-2 # place 0 for no weight decay
     args.Rho_end_value = 0.3
     args.end_rho_at_epoch = args.num_of_epochs - 30
     args.batch_norm = True
@@ -46,7 +48,7 @@ def line_search():
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
 
     # create data-loaders
-    args.dataset_name = 'adult' # LETTER / adult / higgs_small
+    args.dataset_name = 'aloi' # LETTER / adult / higgs_small / aloi
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
@@ -64,6 +66,10 @@ def line_search():
     elif args.dataset_name == 'higgs_small':
         from CTE.utils.datasets.Higgs_Small_dataset import Higgs_Small as DataSet
         from CTE.bin.HTE_experiments.HTE_Higgs import Train_Higgs as Train_model
+		train_path, test_path, val_path = 'train', 'test', 'val'
+    elif args.dataset_name == 'aloi':
+        from CTE.utils.datasets.ALOI_dataset import ALOI as DataSet
+        from CTE.bin.HTE_experiments.HTE_ALOI import Train_ALOI as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
 
 

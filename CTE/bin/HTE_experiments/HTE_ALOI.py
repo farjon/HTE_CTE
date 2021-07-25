@@ -7,11 +7,11 @@ from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from datetime import datetime
 
-def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
+def Train_ALOI(args, train_loader, test_loader, device, val_loader = None):
 
     # Letter recognition dataset has 16 features and 26 classes
-    features_in = 14
-    final_classes = 2
+    features_in = 128
+    final_classes = 1000
     D_in = [features_in]
     D_out = []
     for i in range(args.num_of_layers - 1):
