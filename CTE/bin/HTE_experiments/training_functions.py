@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from itertools import count
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from tqdm import tqdm
+from CTE.utils.help_funcs import mixup_data, mixup_criterion
 
 def train_loop(model,
                train_loader,
@@ -47,8 +48,13 @@ def train_loop(model,
             # zero the parameter gradients - this method was reported as a faster way to zero grad
             for param in model.parameters():
                 param.grad = None
-            outputs = model(inputs)
-            loss = criterion(outputs, labels)
+            if args.use_mixup:
+                mix_inputs, labels_a, labels_b, lam = mixup_data(inputs, labels)
+                outputs = model(mix_inputs)
+                loss = mixup_criterion(criterion, outputs, labels_a, labels_b, lam)
+            else:
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
             running_loss_graph += float(loss.item())
             loss.backward()
             optimizer.step()

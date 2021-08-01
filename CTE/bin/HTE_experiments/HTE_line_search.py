@@ -45,6 +45,7 @@ def line_search():
     args.batch_norm = True
     args.res_connection = 2 # 1 - resnet from input, size of d_out for l in [0, l-1] is d_in (summing input with layer's output)
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
+    args.use_mixup = False
 
     # create data-loaders
     args.dataset_name = 'aloi' # LETTER / adult / higgs_small / aloi
