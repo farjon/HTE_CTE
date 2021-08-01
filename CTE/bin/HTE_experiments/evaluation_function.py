@@ -16,11 +16,19 @@ def eval_loop(test_loader, model, device, args):
             _, predicted = torch.max(outputs_test.data, 1)
             y_pred.extend(predicted.detach().cpu().numpy().tolist())
             correct += (predicted == labels_test).sum().item()
+
+    if args.monitor_acc:
+        accuracy = 100*(correct/test_examples)
+        print(f'the balanced accuracy is {accuracy}')
+        ret_score = accuracy
     if args.monitor_balanced_acc:
         balanced_accuracy = metrics.balanced_accuracy_score(y_true, y_pred)
         print(f'the balanced accuracy is {balanced_accuracy}')
+        ret_score = balanced_accuracy
     if args.monitor_auc:
         fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
-        print(f'the auc is {metrics.auc(fpr, tpr)}')
+        auc_score = metrics.auc(fpr, tpr)
+        print(f'the auc is {auc_score}')
+        ret_score = auc_score
 
-    return 100*(correct/test_examples)
+    return ret_score
