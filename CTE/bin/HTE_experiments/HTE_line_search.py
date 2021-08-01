@@ -10,9 +10,9 @@ def line_search():
 
     # setting the device and verifying reproducibility
     # device = torch.device('cpu')
-    device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(3)
+        torch.cuda.set_device(0)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -23,12 +23,12 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 6
+    args.experiment_number = 8
 
     # search parameters
     num_of_ferns = [100]
     number_of_BF = [8]*len(num_of_ferns)
-    num_of_layers = 3
+    num_of_layers = 2
 
     # optimization Parameters
     args.num_of_epochs = 80
@@ -45,7 +45,11 @@ def line_search():
     args.batch_norm = True
     args.res_connection = 2 # 1 - resnet from input, size of d_out for l in [0, l-1] is d_in (summing input with layer's output)
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
+
     args.use_mixup = False
+    args.monitor_balanced_acc = False
+    args.monitor_auc = False
+
 
     # create data-loaders
     args.dataset_name = 'aloi' # LETTER / adult / higgs_small / aloi

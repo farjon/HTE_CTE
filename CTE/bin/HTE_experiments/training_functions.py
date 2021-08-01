@@ -41,7 +41,6 @@ def train_loop(model,
     best_epoch = 0
     for epoch in range(epoch_start, args.num_of_epochs):
         running_loss_graph = 0.0
-        end = time.time()
         loop = tqdm(enumerate(train_loader), total = len(train_loader), leave=False )
         for batch_idx, (inputs, labels) in loop:
             inputs, labels = inputs.to(device), labels.to(device)
@@ -80,7 +79,7 @@ def train_loop(model,
         if val_loader is not None:
             # if epoch >= args.end_rho_at_epoch:
             if epoch >= 0:
-                accuracy = eval_loop(val_loader, model, device)
+                accuracy = eval_loop(val_loader, model, device, args)
                 if accuracy >= best_accuracy:
                     best_epoch = epoch
                     best_accuracy = accuracy

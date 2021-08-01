@@ -68,7 +68,8 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
     if args.optimizer == 'ADAM':
         optimizer = optim.Adam([{'params': word_calc_params},
                                {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
-                                  lr=args.word_calc_learning_rate)
+                                  lr=args.word_calc_learning_rate,
+                                weight_decay=args.weight_decay)
     elif args.optimizer == 'sgd':
         optimizer = optim.SGD([{'params': word_calc_params},
                                {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
@@ -141,7 +142,7 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
         final_paths_anneal_params.append(os.path.join(args.save_path, 'final_anneal_params_'+str(i+1)+'.p'))
     save_model_anneal_params(final_model, final_paths_anneal_params)
 
-    final_accuracy = eval_loop(test_loader, final_model, device)
+    final_accuracy = eval_loop(test_loader, final_model, device, args)
     print(f'final model accuracy is {final_accuracy}')
 
     path_to_parameters_save = os.path.join(args.save_path, 'final_parameters_values.csv')
@@ -161,7 +162,7 @@ def Train_Letters(args, train_loader, test_loader, device, val_loader = None):
     optimizer.load_state_dict(best_model_params['optimizer_state_dict'])
     load_model_anneal_params(best_model, best_model_anneal_params)
 
-    best_accuracy = eval_loop(test_loader, best_model, device)
+    best_accuracy = eval_loop(test_loader, best_model, device, args)
     print(f'best model accuracy is {best_accuracy}')
 
     dateTimeObj = datetime.now()
