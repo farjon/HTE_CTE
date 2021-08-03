@@ -7,10 +7,10 @@ from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from datetime import datetime
 
-def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
+def Train_Helena(args, train_loader, test_loader, device, val_loader = None):
 
-    features_in = 14
-    final_classes = 2
+    features_in = 27
+    final_classes = 100
     D_in = [features_in]
     D_out = []
     for i in range(args.num_of_layers - 1):

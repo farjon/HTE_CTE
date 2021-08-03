@@ -10,9 +10,9 @@ def line_search():
 
     # setting the device and verifying reproducibility
     # device = torch.device('cpu')
-    device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(2)
+        torch.cuda.set_device(0)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -23,12 +23,12 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 11
+    args.experiment_number = 21
 
     # search parameters
-    num_of_ferns = [100]
+    num_of_ferns = [50]
     number_of_BF = [7]*len(num_of_ferns)
-    num_of_layers = 3
+    num_of_layers = 2
 
     # optimization Parameters
     args.num_of_epochs = 80
@@ -49,13 +49,13 @@ def line_search():
     args.use_mixup = False
 
     args.monitor_acc = False
-    args.monitor_balanced_acc = True
-    args.monitor_auc = False
+    args.monitor_balanced_acc = False
+    args.monitor_auc = True
 
     assert args.monitor_acc + args.monitor_balanced_acc + args.monitor_auc == 1, 'you can monitor only a single metric'
 
     # create data-loaders
-    args.dataset_name = 'adult' # LETTER / adult / higgs_small / aloi
+    args.dataset_name = 'higgs_small' # LETTER / adult / higgs_small / aloi / helena / jannis
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
@@ -77,6 +77,14 @@ def line_search():
     elif args.dataset_name == 'aloi':
         from CTE.utils.datasets.ALOI_dataset import ALOI as DataSet
         from CTE.bin.HTE_experiments.HTE_ALOI import Train_ALOI as Train_model
+        train_path, test_path, val_path = 'train', 'test', 'val'
+    elif args.dataset_name == 'helena':
+        from CTE.utils.datasets.Helena_dataset import Helena as DataSet
+        from CTE.bin.HTE_experiments.HTE_ALOI import Train_Helena as Train_model
+        train_path, test_path, val_path = 'train', 'test', 'val'
+    elif args.dataset_name == 'jannis':
+        from CTE.utils.datasets.Jannis_dataset import Jannis as DataSet
+        from CTE.bin.HTE_experiments.HTE_ALOI import Train_Jannis as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
 
 
