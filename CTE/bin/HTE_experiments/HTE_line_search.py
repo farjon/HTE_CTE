@@ -23,7 +23,7 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 13
+    args.experiment_number = 12
 
     # search parameters
     num_of_ferns = [100]
@@ -31,7 +31,7 @@ def line_search():
     num_of_layers = 2
 
     # optimization Parameters
-    args.num_of_epochs = 160
+    args.num_of_epochs = 80
     args.batch_size = 400
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
@@ -40,8 +40,8 @@ def line_search():
     args.loss = 'categorical_crossentropy'
     args.use_cosine_lr = False
     args.weight_decay = 1e-2 # place 0 for no weight decay
-    args.Rho_end_value = 0.2
-    args.end_rho_at_epoch = args.num_of_epochs - 20
+    args.Rho_end_value = 0.3
+    args.end_rho_at_epoch = args.num_of_epochs - 30
     args.batch_norm = True
     args.res_connection = 2 # 1 - resnet from input, size of d_out for l in [0, l-1] is d_in (summing input with layer's output)
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
@@ -56,12 +56,13 @@ def line_search():
 
     # create data-loaders
     args.dataset_name = 'letter' # letter / adult / higgs_small / aloi / helena / jannis
+
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
     dataset_params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 0}
 
-    if args.dataset_name == 'LETTER':
+    if args.dataset_name == 'letter':
         from CTE.utils.datasets.Letter_dataset import Letters as DataSet
         from CTE.utils.datasets.create_letters_dataset import main as create_dataset
         from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters as Train_model
