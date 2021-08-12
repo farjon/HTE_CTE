@@ -23,25 +23,25 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 21
+    args.experiment_number = 13
 
     # search parameters
-    num_of_ferns = [50]
+    num_of_ferns = [100]
     number_of_BF = [7]*len(num_of_ferns)
-    num_of_layers = 2
+    num_of_layers = 3
 
     # optimization Parameters
-    args.num_of_epochs = 80
-    args.batch_size = 512
+    args.num_of_epochs = 160
+    args.batch_size = 256
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
-    args.LR_decay = 0.99
+    args.LR_decay = 0.995
     args.optimizer = 'ADAM' # ADAM / sgd
     args.loss = 'categorical_crossentropy'
     args.use_cosine_lr = False
     args.weight_decay = 1e-2 # place 0 for no weight decay
-    args.Rho_end_value = 0.3
-    args.end_rho_at_epoch = args.num_of_epochs - 30
+    args.Rho_end_value = 0.2
+    args.end_rho_at_epoch = args.num_of_epochs - 20
     args.batch_norm = True
     args.res_connection = 2 # 1 - resnet from input, size of d_out for l in [0, l-1] is d_in (summing input with layer's output)
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
@@ -49,13 +49,13 @@ def line_search():
     args.use_mixup = False
 
     args.monitor_acc = False
-    args.monitor_balanced_acc = False
-    args.monitor_auc = True
+    args.monitor_balanced_acc = True
+    args.monitor_auc = False
 
     assert args.monitor_acc + args.monitor_balanced_acc + args.monitor_auc == 1, 'you can monitor only a single metric'
 
     # create data-loaders
-    args.dataset_name = 'higgs_small' # LETTER / adult / higgs_small / aloi / helena / jannis
+    args.dataset_name = 'adult' # LETTER / adult / higgs_small / aloi / helena / jannis
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)
 
@@ -80,11 +80,11 @@ def line_search():
         train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'helena':
         from CTE.utils.datasets.Helena_dataset import Helena as DataSet
-        from CTE.bin.HTE_experiments.HTE_ALOI import Train_Helena as Train_model
+        from CTE.bin.HTE_experiments.HTE_Helena import Train_Helena as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'jannis':
         from CTE.utils.datasets.Jannis_dataset import Jannis as DataSet
-        from CTE.bin.HTE_experiments.HTE_ALOI import Train_Jannis as Train_model
+        from CTE.bin.HTE_experiments.HTE_Jannis import Train_Jannis as Train_model
         train_path, test_path, val_path = 'train', 'test', 'val'
 
 
