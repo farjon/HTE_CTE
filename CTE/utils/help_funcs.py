@@ -31,6 +31,16 @@ def load_anneal_params(path_to_AT, path_to_anneal_params, device):
 
     return layer_ambiguity_thresholds, layer_anneal_params
 
+def timer_decorator(func):
+    import time
+    def timer(*args, **kwargs):
+        ts = time.time()
+        results = func(*args, **kwargs)
+        te = time.time()
+        print(func, (te-ts))
+        return results
+    return timer
+
 def print_end_experiment_report(args, model, optimizer, test_score, testset_size, path_to_parameters, path_to_hyper_params):
     # print model parameters
     path_to_save_file = path_to_parameters

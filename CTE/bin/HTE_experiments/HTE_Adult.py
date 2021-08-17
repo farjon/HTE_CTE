@@ -155,7 +155,7 @@ def Train_Adult(args, train_loader, test_loader, device, val_loader = None):
     best_model_anneal_params = args.val_paths_anneal_params
     best_model = final_model
 
-    best_model_params = torch.load(best_model_path)
+    best_model_params = torch.load(best_model_path, map_location=device)
     best_model.load_state_dict(best_model_params['model_state_dict'])
     optimizer.load_state_dict(best_model_params['optimizer_state_dict'])
     load_model_anneal_params(best_model, best_model_anneal_params)

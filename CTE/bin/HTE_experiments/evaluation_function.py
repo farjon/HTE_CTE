@@ -30,5 +30,14 @@ def eval_loop(test_loader, model, device, args):
         auc_score = metrics.auc(fpr, tpr)
         print(f'the auc is {auc_score}')
         ret_score = auc_score
-
+    # accuracy = 100*(correct/test_examples)
+    # print(f'the balanced accuracy is {accuracy}')
+    # ret_score = accuracy
+    # balanced_accuracy = metrics.balanced_accuracy_score(y_true, y_pred)
+    # print(f'the balanced accuracy is {balanced_accuracy}')
+    # ret_score = balanced_accuracy
+    # fpr, tpr, thresholds = metrics.roc_curve(y_true, y_pred)
+    # auc_score = metrics.auc(fpr, tpr)
+    # print(f'the auc is {auc_score}')
+    # ret_score = auc_score
     return ret_score

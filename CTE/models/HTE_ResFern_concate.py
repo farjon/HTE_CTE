@@ -4,7 +4,7 @@ from CTE.layers._misc import FernBitWord_tabular, FernSparseTable_tabular
 import torch.nn as nn
 import torch
 from CTE.utils.annealing_mechanism_functions import update_ambiguity_thresholds_tabular, update_Rho_tempature_tabular
-
+from CTE.utils.help_funcs import timer_decorator
 
 class HTE(nn.Module):
     def __init__(self, args, input_shape, device):
@@ -46,7 +46,7 @@ class HTE(nn.Module):
         self.args = args
         self.save_fern_bit_values = [None] * args.num_of_layers
 
-
+    # @timer_decorator
     def forward(self, x):
         input_conn = x.clone()
         for i in range(self.number_of_layers):

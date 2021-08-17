@@ -22,7 +22,7 @@ def train_loop(model,
     device = args.device
     # check if there is a checkpoint
     if os.path.isfile(args.checkpoint_model_path):
-        checkpoint = torch.load(args.checkpoint_model_path)
+        checkpoint = torch.load(args.checkpoint_model_path, map_location=device)
         model.load_state_dict(checkpoint['model_state_dict'])
         epoch = checkpoint['epoch']
         epoch_start = checkpoint['epoch'] + 1
@@ -55,7 +55,9 @@ def train_loop(model,
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
             running_loss_graph += float(loss.item())
+            # ts = time.time()
             loss.backward()
+            # print(f'backward takes {time.time() - ts} seconds')
             optimizer.step()
             model.on_batch_ends(device)
             loop.set_description(f'Epoch [{epoch+1}/{args.num_of_epochs}]')

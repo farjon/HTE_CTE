@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+from CTE.utils.help_funcs import timer_decorator
+
 
 def init_ambiguity_thresholds(num_of_ferns, K, device):
     '''
@@ -168,9 +170,9 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
         anneal_state_params = {}
 
     if 'sample_size' not in anneal_state_params:
-        anneal_state_params['sample_size'] = 500
+        anneal_state_params['sample_size'] = 1000
     if 'Rho' not in anneal_state_params:
-        anneal_state_params['Rho'] = 0.8
+        anneal_state_params['Rho'] = 0.99
     if 'batch_till_update' not in anneal_state_params:
         anneal_state_params['batch_till_update'] = 0
     if 'count_till_update' not in anneal_state_params:
@@ -190,6 +192,7 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
         anneal_state_params['tempature_heat_rate'] = np.exp(np.log(30)/(args.number_of_batches*args.num_of_epochs))
     return anneal_state_params
 
+# @timer_decorator
 def update_Rho_tempature_tabular(anneal_state_params):
     '''
     Updates the anneal_state_parameter 'Rho' for a CTE layer

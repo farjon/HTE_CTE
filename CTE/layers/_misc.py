@@ -6,6 +6,8 @@ import pandas as pd
 from CTE.utils.annealing_mechanism_functions import init_ambiguity_thresholds
 from CTE.utils.annealing_mechanism_functions import init_anneal_state, init_anneal_state_tabular
 from CTE.utils.binary_functions import q_bin_activation
+from CTE.utils.help_funcs import timer_decorator
+import time
 # from pytorch_memlab import profile
 
 # pytorch uses NxCxHxW dimension order!!
@@ -576,6 +578,7 @@ class FernBitWord_tabular(nn.Module):
         # self.tempature = 1
         # self.anneal_state_params = init_anneal_state()
 
+    # @timer_decorator
     def forward(self, T):
         '''
         applied on the input tensor, this layer slices the tensor according to the number of bit function and the number of ferns
@@ -654,7 +657,7 @@ class FernSparseTable_tabular(nn.Module):
         # The next two commented rows are for debug purposes
         # mat = torch.arange(0., 2**K).repeat(D_out).reshape(D_out, 2**K).transpose(1,0).cuda()
         # self.weights = mat.repeat([num_of_ferns, 1, 1]).cuda()
-
+    # @timer_decorator
     def forward(self, B):
         '''
         This function start with (1) Produce the most probable word for all (images, locations),
@@ -670,23 +673,26 @@ class FernSparseTable_tabular(nn.Module):
 
         activations = torch.zeros([N, self.num_of_active_words*self.num_of_ferns], device=self.device)
         IT = torch.zeros([N, self.num_of_active_words*self.num_of_ferns], device=self.device)
-
+        # ts = time.time()
         # Get indices and activations for most probable words
         for m in range(self.num_of_ferns):
             current_fern = B[:, m, :]
             words, activity = self.get_activations_and_indices(current_fern)
             activations[:, m*self.num_of_active_words: (m+1)*self.num_of_active_words] = activity
             IT[:, m * self.num_of_active_words: (m + 1) * self.num_of_active_words] = words
+        # print(f'finding activities and indices takes {time.time() - ts} seconds')
 
         AT = activations
         IT = torch._cast_Int(IT)
         output = torch.zeros([N, self.d_out], device=self.device)
         # debug - check the number of average active words
-        # AT_bin = AT > 0.005
-        # print('average number of active words is %i' %((AT_bin.sum()//N)//M))
+        # AT_bin = AT > 0.01
+        # print('average number of active words is %i' %((AT_bin.sum()//N)//self.num_of_ferns))
+
 
         inds_vector = torch.arange(0, N, dtype=torch.int32, device=self.device)
         rows = inds_vector.repeat(self.num_of_active_words) # [0,0,0,...,1,1,1,...,N,N,N]
+        # ts = time.time()
         for m in range(self.num_of_ferns):
             start_ind = m * self.num_of_active_words
             end_ind = (m+1) * self.num_of_active_words
@@ -699,6 +705,7 @@ class FernSparseTable_tabular(nn.Module):
             sparse_vote = torch.sparse.mm(Votes, self.weights[m])
             output = torch.add(output, sparse_vote)
         output = output + self.bias
+        # print(f'spase_mul takes {time.time() - ts} seconds')
         # reshaped_output = output.reshape([self.d_out, N])
         # output = reshaped_output.permute(1,0)
 
@@ -729,7 +736,6 @@ class FernSparseTable_tabular(nn.Module):
 
         bit_split_probs_tensor = torch.ones(num_of_examples, dtype=torch.int32, device=self.device)
         T_copy = T.clone()
-        # this is a bug - don't multiply by 1-T all the time
         T_copy = torch.where(T_copy < 0.5, 1-T_copy, T_copy)
 
         for k in range(self.num_of_bit_functions-1,-1,-1):
@@ -795,25 +801,26 @@ class FernSparseTable_tabular(nn.Module):
             bit_K = torch.where(tensor_bit_pattern[j], ABA_slice_repeat, 1 - ABA_slice_repeat)
             AT = torch.mul(AT, bit_K)
             # divide the total multiplication by the current bit to split
-            bit_K_no_zeros = ABA_slice_repeat.clone()
-            bit_K_no_zeros = torch.where(bit_K_no_zeros < 0.5, 1 - bit_K_no_zeros, bit_K_no_zeros)
+            # bit_K_no_zeros = ABA_slice_repeat.clone()
+            bit_K_no_zeros = torch.where(ABA_slice_repeat < 0.5, 1 - ABA_slice_repeat, ABA_slice_repeat)
             bit_split_probs_tensor = torch.div(bit_split_probs_tensor, bit_K_no_zeros)
 
         AT = torch.mul(AT, bit_split_probs_tensor)
 
-
         ones_matrix = torch.ones(num_of_examples, dtype=torch.int32, device=self.device)
-
+        ABI = torch._cast_Int(ABI)
         # Create the output tensor IT containing the indices of active words for all (images, locations)
         for j in range(self.LP):
-            ABI_slice = torch._cast_Int((ABI[:, j]))
-            ABI_slice_temp = ABI_slice
+            ABI_slice = (ABI[:, j])
+            # ABI_slice = torch._cast_Int((ABI[:, j]))
+            # ABI_slice_temp = ABI_slice
 
-            bit_on_mask = ones_matrix.__lshift__(ABI_slice_temp)
+            bit_on_mask = ones_matrix.__lshift__(ABI_slice)
+            # bit_on_mask = ones_matrix.__lshift__(ABI_slice_temp)
             bit_on_mask = bit_on_mask.unsqueeze(1).repeat([1, self.num_of_active_words])
 
             bit_on_words = IT | bit_on_mask
-            bit_off_mask = bit_on_mask.__xor__(torch.tensor([(2**self.num_of_bit_functions)-1], device=self.device))
+            bit_off_mask = bit_on_mask.__xor__(torch.tensor([(self.K_pow_2)-1], device=self.device))
             bit_off_words = IT & bit_off_mask
 
             IT = torch.where(tensor_bit_pattern[j], bit_on_words, bit_off_words)
