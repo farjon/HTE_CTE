@@ -18,7 +18,7 @@ def Train_Helena(args, train_loader, test_loader, device, val_loader = None):
             D_out.append(features_in)
             D_in.append(D_out[i])
         elif args.res_connection == 2:
-            D_out.append(40)
+            D_out.append(80)
             D_in.append(D_out[i]+D_in[0])
     D_out.append(final_classes)
 

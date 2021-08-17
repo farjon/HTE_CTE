@@ -19,7 +19,7 @@ def eval_loop(test_loader, model, device, args):
 
     if args.monitor_acc:
         accuracy = 100*(correct/test_examples)
-        print(f'the balanced accuracy is {accuracy}')
+        print(f'the accuracy is {accuracy}')
         ret_score = accuracy
     if args.monitor_balanced_acc:
         balanced_accuracy = metrics.balanced_accuracy_score(y_true, y_pred)
@@ -31,7 +31,7 @@ def eval_loop(test_loader, model, device, args):
         print(f'the auc is {auc_score}')
         ret_score = auc_score
     # accuracy = 100*(correct/test_examples)
-    # print(f'the balanced accuracy is {accuracy}')
+    # print(f'the accuracy is {accuracy}')
     # ret_score = accuracy
     # balanced_accuracy = metrics.balanced_accuracy_score(y_true, y_pred)
     # print(f'the balanced accuracy is {balanced_accuracy}')
@@ -40,4 +40,5 @@ def eval_loop(test_loader, model, device, args):
     # auc_score = metrics.auc(fpr, tpr)
     # print(f'the auc is {auc_score}')
     # ret_score = auc_score
+
     return ret_score
