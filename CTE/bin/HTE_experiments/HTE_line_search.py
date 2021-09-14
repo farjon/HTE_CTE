@@ -45,7 +45,7 @@ def line_search():
     args.batch_norm = True
     args.res_connection = 2 # 1 - resnet from input, size of d_out for l in [0, l-1] is d_in (summing input with layer's output)
                             # 2 - resnet concatination, d_out for l in [0, l-1] is concatanated with input features
-
+    args.task = 'cls'
     args.use_mixup = False
 
     args.monitor_acc = True
@@ -63,40 +63,21 @@ def line_search():
     dataset_params = {'batch_size': args.batch_size, 'shuffle': True, 'num_workers': 0}
 
     if args.dataset_name == 'letter':
-        from CTE.utils.datasets.Letter_dataset import Letters as DataSet
-        from CTE.utils.datasets.create_letters_dataset import main as create_dataset
         from CTE.bin.HTE_experiments.HTE_Letter_recognition import Train_Letters as Train_model
-        train_path, val_path, test_path = create_dataset(args)
     elif args.dataset_name == 'adult':
-        from CTE.utils.datasets.Adult_dataset import Adult as DataSet
         from CTE.bin.HTE_experiments.HTE_Adult import Train_Adult as Train_model
-        train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'higgs_small':
-        from CTE.utils.datasets.Higgs_Small_dataset import Higgs_Small as DataSet
         from CTE.bin.HTE_experiments.HTE_Higgs import Train_Higgs as Train_model
-        train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'aloi':
-        from CTE.utils.datasets.ALOI_dataset import ALOI as DataSet
         from CTE.bin.HTE_experiments.HTE_ALOI import Train_ALOI as Train_model
-        train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'helena':
-        from CTE.utils.datasets.Helena_dataset import Helena as DataSet
         from CTE.bin.HTE_experiments.HTE_Helena import Train_Helena as Train_model
-        train_path, test_path, val_path = 'train', 'test', 'val'
     elif args.dataset_name == 'jannis':
-        from CTE.utils.datasets.Jannis_dataset import Jannis as DataSet
         from CTE.bin.HTE_experiments.HTE_Jannis import Train_Jannis as Train_model
-        train_path, test_path, val_path = 'train', 'test', 'val'
 
 
-    # training_set = DataSet(train_path)
-    # train_loader = torch.utils.data.DataLoader(training_set, **dataset_params)
-    # testing_set = DataSet(test_path, train_loader.dataset.mean, train_loader.dataset.std)
-    # test_loader = torch.utils.data.DataLoader(testing_set, **dataset_params)
-    #
-    # if 'val_path' in locals():
-    #     validation_set = DataSet(val_path, train_loader.dataset.mean, train_loader.dataset.std)
-    #     val_loader = torch.utils.data.DataLoader(validation_set, **dataset_params)
+    from CTE.utils.datasets.Tabular_dataset import TabularDataset as DataSet
+    train_path, test_path, val_path = 'train', 'test', 'val'
 
     training_set = DataSet(args.datadir, set='train', device=device)
     train_loader = torch.utils.data.DataLoader(training_set, **dataset_params)

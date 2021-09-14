@@ -63,7 +63,8 @@ class HTE(nn.Module):
             if i < self.number_of_layers-1:
                 x = torch.cat((x, input_conn), dim=1)
         x = self.reg_layer(x)
-        return x
+        return x[:,0]
+
 
     def save_fern_values(self, bit_functions_values_list):
         '''

@@ -2,15 +2,15 @@ import os
 import torch
 import torch.nn as nn
 from torch import optim
-from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report
+from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report, print_final_results
 from CTE.bin.HTE_experiments.training_functions import train_loop
 from CTE.bin.HTE_experiments.evaluation_function import eval_loop
 from datetime import datetime
 
-def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = None):
+def Train_Year(args, train_loader, test_loader, device, val_loader = None):
 
     # Letter recognition dataset has 16 features and 26 classes
-    features_in = 8
+    features_in = 90
     D_in = [features_in]
     D_out = []
     for i in range(args.num_of_layers):
@@ -63,11 +63,13 @@ def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = Non
     if args.optimizer == 'ADAM':
         optimizer = optim.Adam([{'params': word_calc_params},
                                {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
-                                  lr=args.word_calc_learning_rate)
+                                  lr=args.word_calc_learning_rate,
+                              weight_decay=args.weight_decay)
     elif args.optimizer == 'sgd':
         optimizer = optim.SGD([{'params': word_calc_params},
                                {'params': voting_table_params, 'lr': args.voting_table_learning_rate}],
-                                  lr=args.word_calc_learning_rate)
+                                  lr=args.word_calc_learning_rate,
+                              weight_decay=args.weight_decay)
     else:
         assert 'no such optimizer, use only ADAM or sgd'
 
@@ -76,9 +78,11 @@ def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = Non
     args.checkpoint_folder_path = os.path.join(args.save_path, 'check_point')
     os.makedirs(args.checkpoint_folder_path, exist_ok=True)
     args.checkpoint_model_path = os.path.join(args.save_path, 'check_point', 'checkpoint_model.pt')
-    for i in range(0,args.num_of_layers*2,2):
-        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'ambiguity_thresholds_layer_'+str(i)+'.p'))
-        checkpoint_paths_anneal_params.append(os.path.join(args.checkpoint_folder_path, 'anneal_params_'+str(i+1)+'.p'))
+    for i in range(0, args.num_of_layers * 2, 2):
+        checkpoint_paths_anneal_params.append(
+            os.path.join(args.checkpoint_folder_path, 'ambiguity_thresholds_layer_' + str(i) + '.p'))
+        checkpoint_paths_anneal_params.append(
+            os.path.join(args.checkpoint_folder_path, 'anneal_params_' + str(i + 1) + '.p'))
     args.checkpoint_paths_anneal_params = checkpoint_paths_anneal_params
 
     # set path to save best model parameters and annealing parameters
@@ -95,32 +99,48 @@ def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = Non
         args.val_paths_anneal_params = val_anneal_params
 
     def save_model_anneal_params(model, paths_to_load):
-        for i in range(0, args.num_of_layers*2,2):
+        for i in range(0, args.num_of_layers * 2, 2):
             path_to_AT = paths_to_load[i]
-            path_to_anneal_params = paths_to_load[i+1]
-            save_anneal_params(model.word_calc_layers[int(i/2)], path_to_AT, path_to_anneal_params)
+            path_to_anneal_params = paths_to_load[i + 1]
+            save_anneal_params(model.word_calc_layers[int(i / 2)], path_to_AT, path_to_anneal_params)
 
     def load_model_anneal_params(model, paths_to_save):
-        for i in range(0, args.num_of_layers*2,2):
+        for i in range(0, args.num_of_layers * 2, 2):
             path_to_AT = paths_to_save[i]
-            path_to_anneal_params = paths_to_save[i+1]
-            AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params)
-            model.word_calc_layers[int(i/2)].ambiguity_thresholds = AT
-            model.word_calc_layers[int(i/2)].anneal_state_params = AP
+            path_to_anneal_params = paths_to_save[i + 1]
+            AT, AP = load_anneal_params(path_to_AT, path_to_anneal_params, device)
+            model.word_calc_layers[int(i / 2)].ambiguity_thresholds = AT
+            model.word_calc_layers[int(i / 2)].anneal_state_params = AP
         return model
 
-    final_model = train_loop(args, train_loader, model, optimizer, criterion, device, save_model_anneal_params, load_model_anneal_params, val_loader)
+    # add lr scheduler
+    if args.use_cosine_lr:
+        update_lr = 10  # T_max
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, update_lr, eta_min=1e-4)
+    else:
+        scheduler = None
 
-    #save model and ambiguity_thresholds
+    final_model = train_loop(model,
+                             train_loader,
+                             val_loader,
+                             criterion,
+                             optimizer,
+                             scheduler,
+                             args,
+                             save_model_anneal_params,
+                             load_model_anneal_params,
+                             )
+    # save model and ambiguity_thresholds
     torch.save(final_model.state_dict(), os.path.join(args.save_path, 'final_model_parameters.pth'))
 
     final_paths_anneal_params = []
-    for i in range(0,args.num_of_layers*2,2):
-        final_paths_anneal_params.append(os.path.join(args.save_path, 'final_ambiguity_thresholds_layer_'+str(i)+'.p'))
-        final_paths_anneal_params.append(os.path.join(args.save_path, 'final_anneal_params_'+str(i+1)+'.p'))
+    for i in range(0, args.num_of_layers * 2, 2):
+        final_paths_anneal_params.append(
+            os.path.join(args.save_path, 'final_ambiguity_thresholds_layer_' + str(i) + '.p'))
+        final_paths_anneal_params.append(os.path.join(args.save_path, 'final_anneal_params_' + str(i + 1) + '.p'))
     save_model_anneal_params(final_model, final_paths_anneal_params)
 
-    final_accuracy = eval_loop(test_loader, final_model, device)
+    final_accuracy = eval_loop(test_loader, final_model, device, args)
     print(f'final model accuracy is {final_accuracy}')
 
     path_to_parameters_save = os.path.join(args.save_path, 'final_parameters_values.csv')
@@ -130,20 +150,22 @@ def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = Non
                                 path_to_parameters_save,
                                 path_to_hyper_parameters_save)
 
-
     best_model_path = args.val_model_path
     best_model_anneal_params = args.val_paths_anneal_params
     best_model = final_model
 
-    best_model_params = torch.load(best_model_path)
+    best_model_params = torch.load(best_model_path, map_location=device)
     best_model.load_state_dict(best_model_params['model_state_dict'])
     optimizer.load_state_dict(best_model_params['optimizer_state_dict'])
     load_model_anneal_params(best_model, best_model_anneal_params)
 
-    best_accuracy = eval_loop(test_loader, best_model, device)
+    best_accuracy = eval_loop(test_loader, best_model, device, args)
     print(f'best model accuracy is {best_accuracy}')
 
     dateTimeObj = datetime.now()
     timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
     print('Current Timestamp : ', timestampStr)
+
+    # print_results_to_csv
+    print_final_results(args, best_accuracy, final_accuracy)
     return

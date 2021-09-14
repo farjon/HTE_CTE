@@ -37,7 +37,10 @@ def train_loop(model,
     loss_for_epoch = []
     index = count()
     number_of_batchs = args.number_of_batches
-    best_accuracy = 0
+    if args.task == 'reg':
+        best_score = 1e10
+    else:
+        best_score = 0
     best_epoch = 0
     for epoch in range(epoch_start, args.num_of_epochs):
         running_loss_graph = 0.0
@@ -81,18 +84,31 @@ def train_loop(model,
         if val_loader is not None:
             # if epoch >= args.end_rho_at_epoch:
             if epoch >= 0:
-                accuracy = eval_loop(val_loader, model, device, args)
-                if accuracy >= best_accuracy:
-                    best_epoch = epoch
-                    best_accuracy = accuracy
-                    torch.save({
-                        'epoch': epoch,
-                        'model_state_dict': model.state_dict(),
-                        'optimizer_state_dict': optimizer.state_dict()
-                    }, args.val_model_path)
-                    save_anneal_func(model, args.val_paths_anneal_params)
-                    model.train(True)
-                    print(f'best validation accuracy is now {best_accuracy}')
+                score = eval_loop(val_loader, model, device, args)
+                if args.task == 'reg':
+                    if score <= best_score:
+                        best_epoch = epoch
+                        best_score = score
+                        torch.save({
+                            'epoch': epoch,
+                            'model_state_dict': model.state_dict(),
+                            'optimizer_state_dict': optimizer.state_dict()
+                        }, args.val_model_path)
+                        save_anneal_func(model, args.val_paths_anneal_params)
+                        model.train(True)
+                        print(f'best validation accuracy is now {best_score}')
+                else:
+                    if score >= best_score:
+                        best_epoch = epoch
+                        best_score = score
+                        torch.save({
+                            'epoch': epoch,
+                            'model_state_dict': model.state_dict(),
+                            'optimizer_state_dict': optimizer.state_dict()
+                        }, args.val_model_path)
+                        save_anneal_func(model, args.val_paths_anneal_params)
+                        model.train(True)
+                        print(f'best validation accuracy is now {best_score}')
 
         if args.visu_progress:
             loss_for_epoch.append(avg_loss)
@@ -108,5 +124,5 @@ def train_loop(model,
                 plt.savefig(os.path.join(args.checkpoint_folder_path, 'progress plot.png'))
             plt.cla()
     if epoch > 0:
-        print(f'best results is {best_accuracy} at epoch {best_epoch}')
+        print(f'best results is {best_score} at epoch {best_epoch}')
     return model
