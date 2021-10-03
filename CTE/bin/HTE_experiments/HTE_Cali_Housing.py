@@ -13,13 +13,14 @@ def Train_Cali_Housing(args, train_loader, test_loader, device, val_loader = Non
     features_in = 8
     D_in = [features_in]
     D_out = []
-    for i in range(args.num_of_layers):
+    for i in range(args.num_of_layers - 1):
         if args.res_connection == 1:
             D_out.append(features_in)
             D_in.append(D_out[i])
         elif args.res_connection == 2:
-            D_out.append(1)
+            D_out.append(40)
             D_in.append(D_out[i]+D_in[0])
+    D_out.append(1)
 
     # Decide on the ferns parameters and sparse table parameters
     # Fern parameters should include:
