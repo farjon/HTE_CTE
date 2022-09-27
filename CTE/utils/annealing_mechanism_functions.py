@@ -184,11 +184,13 @@ def init_anneal_state_tabular(args, anneal_state_params = None):
         anneal_state_params['use_sign_condition'] = True
     # rho = 0 is set to 1/batch_size, the model will run with hard ferns for 10 epochs
     if 'cooling_rate' not in anneal_state_params:
+        # anneal_state_params['cooling_rate'] = 1
         anneal_state_params['cooling_rate'] = (args.Rho_end_value/anneal_state_params['Rho'])**(1/((args.num_of_epochs-args.end_rho_at_epoch)*args.number_of_batches))
     if 'tempature' not in anneal_state_params:
         anneal_state_params['tempature'] = 1
     # we want beta to reach 30 at the end of training
     if 'tempature_heat_rate' not in anneal_state_params:
+        # anneal_state_params['tempature_heat_rate'] = 1
         anneal_state_params['tempature_heat_rate'] = np.exp(np.log(30)/(args.number_of_batches*args.num_of_epochs))
     return anneal_state_params
 
