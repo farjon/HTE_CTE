@@ -216,7 +216,9 @@ def update_ambiguity_thresholds_tabular(anneal_state_params, ambiguity_threshold
     if anneal_state_params['count_till_update'] < anneal_state_params['batch_till_update']:
         anneal_state_params['count_till_update'] += 1
         anneal_state_params['prev_ambiguity_th_weight'] = 0.992
+        # anneal_state_params['prev_ambiguity_th_weight'] = 0.99
     else:
+        # anneal_state_params['batch_till_update'] = 50
         anneal_state_params['batch_till_update'] = 1
         anneal_state_params['count_till_update'] = 0
 

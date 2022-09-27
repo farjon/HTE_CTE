@@ -10,9 +10,9 @@ def line_search():
 
     # setting the device and verifying reproducibility
     # device = torch.device('cpu')
-    device = torch.device('cuda:3' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     if device.type == 'cuda':
-        torch.cuda.set_device(3)
+        torch.cuda.set_device(0)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
     np.random.seed(10)
@@ -23,16 +23,16 @@ def line_search():
     # choose between - NOF / NOBF / NOL / NODO
     # for the other parameters, write whatever you think fit
     tuning_parameter = 'NOF'
-    args.experiment_number = 12
+    args.experiment_number = 14
 
     # search parameters
     num_of_ferns = [100]
-    number_of_BF = [8]*len(num_of_ferns)
-    num_of_layers = 2
+    number_of_BF = [7]*len(num_of_ferns)
+    num_of_layers = 3
 
     # optimization Parameters
     args.num_of_epochs = 80
-    args.batch_size = 400
+    args.batch_size = 256
     args.word_calc_learning_rate = 0.01
     args.voting_table_learning_rate = 0.01
     args.LR_decay = 0.99
@@ -48,14 +48,14 @@ def line_search():
     args.task = 'cls'
     args.use_mixup = False
 
-    args.monitor_acc = True
-    args.monitor_balanced_acc = False
+    args.monitor_acc = False
+    args.monitor_balanced_acc = True
     args.monitor_auc = False
 
     assert args.monitor_acc + args.monitor_balanced_acc + args.monitor_auc == 1, 'you can monitor only a single metric'
 
     # create data-loaders
-    args.dataset_name = 'letter' # letter / adult / higgs_small / aloi / helena / jannis
+    args.dataset_name = 'adult' # letter / adult / higgs_small / aloi / helena / jannis
 
     args.datadir = os.path.join(GetEnvVar('DatasetsPath'), 'HTE Guy dataset', 'HTE_data', args.dataset_name)
     args.datapath = os.path.join(args.datadir)

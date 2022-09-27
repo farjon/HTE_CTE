@@ -13,12 +13,9 @@ def eval_loop(test_loader, model, device, args):
             labels_test = labels_test.to(device)
             y_true.extend(labels_test.detach().cpu().numpy().tolist())
             outputs_test = model(inputs_test)
-            if len(labels_test.size()) == 1:
-                y_pred.extend(outputs_test.detach().cpu().numpy().tolist())
-            else:
-                _, predicted = torch.max(outputs_test.data, 1)
-                y_pred.extend(predicted.detach().cpu().numpy().tolist())
-                correct += (predicted == labels_test).sum().item()
+            _, predicted = torch.max(outputs_test.data, 1)
+            y_pred.extend(predicted.detach().cpu().numpy().tolist())
+            correct += (predicted == labels_test).sum().item()
 
     if args.task == 'reg':
         if args.monitor_mse:

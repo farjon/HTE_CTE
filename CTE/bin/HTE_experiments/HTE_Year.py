@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch import optim
 from CTE.utils.help_funcs import save_anneal_params, load_anneal_params, print_end_experiment_report, print_final_results
 from CTE.bin.HTE_experiments.training_functions import train_loop
-from CTE.bin.HTE_experiments.evaluation_function import eval_loop
+from CTE.bin.HTE_experiments.evaluation_function_reg import eval_loop
 from datetime import datetime
 
 def Train_Year(args, train_loader, test_loader, device, val_loader = None):
